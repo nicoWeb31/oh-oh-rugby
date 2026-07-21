@@ -146,17 +146,32 @@ Pour démarrer le front sans figer le backend, on peut mocker les entités suiva
   - `points`
   - `rank`
 
-## Règles de Scoring à Définir
+## Barème de Scoring des Pronostics
 
-Le scoring des résultats réels est connu, mais le scoring du jeu de pronostics reste à définir. La spec doit réserver la place pour :
+| Pronostic | Points |
+|---|---|
+| Issue correcte (domicile / nul / extérieur) | 3 pts |
+| Bonus offensif correctement prévu | 1 pt |
+| Bonus défensif correctement prévu | 1 pt |
 
-- points si l'issue du match est correcte ;
-- points si le nul est correctement pronostiqué ;
-- points supplémentaires si le bonus offensif est correctement pronostiqué ;
-- points supplémentaires si le bonus défensif est correctement pronostiqué ;
-- éventuels bonus supplémentaires plus tard si on introduit le score exact.
+- Maximum par match : **5 pts**
+- Un pronostic non saisi vaut **0 pt** pour ce match
+- Les bonus ne rapportent des points que si l'issue est également correcte
+
+> Score exact non pris en compte en V1 — prévu pour une itération ultérieure.
 
 ## UX Cible V1
+
+### Direction artistique — style vintage jeu vidéo (référence : Jonah Lomu Rugby, 1997)
+
+- typographie bold, pixelisée ou condensée — esprit arcade ;
+- palette de couleurs saturées, contrastées, peu de nuances ;
+- UI dense et directe : pas de blancs excessifs, tout visible d'un coup d'œil ;
+- icônes simples et iconiques (maillot, ballon, score) plutôt que des illustrations ;
+- animations légères style "score qui s'affiche" plutôt que transitions fluides ;
+- classement affiché comme un tableau de scores d'arcade.
+
+### Structure des écrans
 
 - page d'accueil ou dashboard avec la compétition active ;
 - liste ou tabs des journées ;
@@ -166,7 +181,7 @@ Le scoring des résultats réels est connu, mais le scoring du jeu de pronostics
   - à venir ;
   - active ;
   - verrouillée ;
-- écran de classement lisible sur mobile.
+- écran de classement lisible sur mobile, style leaderboard arcade.
 
 ## Architecture Technique
 

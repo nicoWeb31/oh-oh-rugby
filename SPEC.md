@@ -99,11 +99,10 @@ Le système de points réel du TOP 14 est le suivant :
 ## Hors Périmètre Immédiat
 
 - authentification réelle ;
-- backend final ;
-- persistance réelle ;
 - gestion d'administration complète ;
 - saisie des scores exacts ;
-- import automatique de résultats officiels.
+- import automatique de résultats officiels ;
+- pipeline CI/CD automatisé (déploiements manuels dans un premier temps).
 
 ## Proposition de Modèle Front Mocké
 
@@ -169,12 +168,77 @@ Le scoring des résultats réels est connu, mais le scoring du jeu de pronostics
   - verrouillée ;
 - écran de classement lisible sur mobile.
 
+## Architecture Technique
+
+### Vue d'ensemble
+
+```
+[Navigateur]
+     │
+     ▼
+[Angular – S3 + CloudFront]
+     │  HTTP/REST
+     ▼
+[API Gateway]
+     │
+     ▼
+[AWS Lambda – Express (handler)]
+     │
+     ▼
+[DynamoDB]
+```
+
+### Frontend — Angular sur S3
+
+- Application : `apps/oh-rugby` (Angular, déjà créé)
+- Build : `pnpm nx build oh-rugby --configuration=production` → `dist/apps/oh-rugby/browser/`
+- Déploiement : bucket S3 en mode site statique, distribué via CloudFront
+- Routing SPA : rediriger les 404 vers `index.html` (règle d'erreur CloudFront ou S3)
+- Variables d'environnement : l'URL de l'API est injectée au build via `environment.ts`
+
+### Backend — Express sur AWS Lambda
+
+- Application : `apps/back-oh-rugby` (Express, déjà créé)
+- Le serveur Express est wrappé avec `aws-serverless-express` (ou `@vendia/serverless-express`) pour être exposé comme handler Lambda
+- Point d'entrée Lambda : `handler` exporté depuis `src/main.ts` (en plus du `app.listen` local pour le dev)
+- Build : `pnpm nx build back-oh-rugby --configuration=production` → `dist/apps/back-oh-rugby/`
+- Déploiement : fonction Lambda Node.js 20.x, exposée via API Gateway HTTP API (v2)
+- CORS : configuré dans Express pour autoriser l'origine du bucket CloudFront
+
+### Base de données — DynamoDB
+
+- Table principale : `oh-rugby-{env}` (single-table design)
+- Clé de partition (`PK`) et clé de tri (`SK`) selon le pattern suivant :
+
+| Entité | PK | SK |
+|---|---|---|
+| Competition | `COMP#{id}` | `META` |
+| Matchday | `COMP#{compId}` | `MATCHDAY#{id}` |
+| Match | `MATCHDAY#{matchdayId}` | `MATCH#{id}` |
+| Player | `PLAYER#{id}` | `META` |
+| Prediction | `PLAYER#{playerId}` | `PRED#MATCH#{matchId}` |
+| RankingEntry | `COMP#{compId}#RANK` | `PLAYER#{playerId}` |
+
+- Index secondaire global (GSI) `MatchdayIndex` : `matchdayId` (PK) pour récupérer tous les matchs d'une journée
+- Index secondaire global (GSI) `MatchPredictionsIndex` : `matchId` (PK) pour récupérer tous les pronostics d'un match
+- Région AWS : `eu-west-3` (Paris)
+- Environnements : `dev` et `prod` (deux tables séparées)
+
+### Infrastructure
+
+- IaC : **Terraform**
+- Ressources gérées : Lambda, API Gateway, DynamoDB, S3, CloudFront, IAM roles
+- Variables d'environnement Lambda : `DYNAMODB_TABLE`, `NODE_ENV`
+- Logs : CloudWatch Logs (groupe `/aws/lambda/back-oh-rugby-{env}`)
+- Pas de VPC (DynamoDB accessible via endpoint public)
+
 ## Stratégie Technique Court Terme
 
 - construire le front d'abord avec des mocks TypeScript ;
 - isoler les données mockées dans des fichiers dédiés ;
 - séparer les modèles métier, les données mockées et la logique de calcul du classement ;
-- prévoir une couche de service facilement remplaçable par une API plus tard.
+- prévoir une couche de service facilement remplaçable par une API plus tard ;
+- brancher ensuite le front sur l'API Lambda en remplaçant les mocks par des appels HTTP.
 
 ## Calendrier des Matchs
 

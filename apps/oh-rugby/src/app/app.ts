@@ -1,6 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { PlayerService } from './services/player.service';
+import { MatchdayService } from './services/matchday.service';
+import { RankingService } from './services/ranking.service';
 
 @Component({
   imports: [RouterOutlet, RouterLink],
@@ -15,16 +17,18 @@ import { PlayerService } from './services/player.service';
           <a routerLink="/" class="nav-link">ACCUEIL</a>
           <a routerLink="/ranking" class="nav-link">CLASSEMENT</a>
         </nav>
+        @if (playerService.currentPlayer()) {
         <div class="player-selector">
           <span class="player-label">JOUEUR</span>
           <select
-            [value]="playerService.currentPlayer().id"
+            [value]="playerService.currentPlayer()!.id"
             (change)="onPlayerChange($event)">
             @for (p of playerService.players(); track p.id) {
               <option [value]="p.id">{{ p.displayName }}</option>
             }
           </select>
         </div>
+        }
       </header>
 
       <main class="main-content">
@@ -73,6 +77,14 @@ import { PlayerService } from './services/player.service';
 })
 export class App {
   playerService = inject(PlayerService);
+  private matchdayService = inject(MatchdayService);
+  private rankingService = inject(RankingService);
+
+  constructor() {
+    this.playerService.load();
+    this.matchdayService.load();
+    this.rankingService.loadGlobal();
+  }
 
   onPlayerChange(event: Event): void {
     const select = event.target as HTMLSelectElement;

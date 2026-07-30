@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Match, Matchday, MatchdayStatus, MatchOutcome, Prediction } from '@org/models';
@@ -212,6 +212,16 @@ export class MatchdayComponent {
   readonly MO = MatchOutcome;
 
   matchday = computed(() => this.matchdayService.getById(this.id()));
+
+  constructor() {
+    effect(() => {
+      const matchday = this.matchday();
+      const player = this.playerService.currentPlayer();
+      if (matchday && player) {
+        this.predictionService.loadForMatchday(player.id, matchday.id);
+      }
+    });
+  }
   status = computed(() => {
     const md = this.matchday();
     return md ? this.matchdayService.getStatus(md) : null;
@@ -227,18 +237,22 @@ export class MatchdayComponent {
   );
 
   getPred(matchId: string): Prediction | undefined {
+    const player = this.playerService.currentPlayer();
+    if (!player) return undefined;
     return this.predictionService.getForPlayerAndMatch(
-      this.playerService.currentPlayer().id,
+      player.id,
       matchId
     );
   }
 
   setPrediction(matchId: string, outcome: MatchOutcome): void {
     if (this.isLocked()) return;
+    const player = this.playerService.currentPlayer();
+    if (!player) return;
     const existing = this.getPred(matchId);
     this.predictionService.save({
-      id: existing?.id ?? `pred-${this.playerService.currentPlayer().id}-${matchId}`,
-      playerId: this.playerService.currentPlayer().id,
+      id: existing?.id ?? `pred-${player.id}-${matchId}`,
+      playerId: player.id,
       matchId,
       outcome,
       offensiveBonusPredicted: existing?.offensiveBonusPredicted ?? false,
@@ -293,4 +307,3 @@ export class MatchdayComponent {
     return ({ HOME: 'DOMICILE', DRAW: 'NUL', AWAY: 'EXTÉRIEUR' })[outcome];
   }
 }
-

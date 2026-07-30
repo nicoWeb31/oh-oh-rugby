@@ -10,10 +10,12 @@ import { FormatDatePipe } from '../../pipes/format-date.pipe';
   imports: [RouterLink, FormatDatePipe],
   template: `
     <div class="dashboard">
-      <div class="competition-banner">
-        <span class="season">{{ competition.season }}</span>
-        <h2 class="competition-name">{{ competition.name }}</h2>
-      </div>
+      @if (competition()) {
+        <div class="competition-banner">
+          <span class="season">{{ competition()!.season }}</span>
+          <h2 class="competition-name">{{ competition()!.name }}</h2>
+        </div>
+      }
 
       @if (activeMatchday()) {
         <section class="active-card">
@@ -133,7 +135,7 @@ export class DashboardComponent {
   allMatchdays = computed(() => this.matchdayService.getAll());
   activeMatchday = computed(() => this.matchdayService.getActive());
   globalRanking = computed(() =>
-    this.rankingService.getGlobal(this.matchdayService.getAll())
+    this.rankingService.getGlobal()
   );
 
   statusClass(id: string): string {
@@ -149,4 +151,3 @@ export class DashboardComponent {
     return ({ ACTIVE: 'ACTIVE', LOCKED: 'JOUÉ', UPCOMING: 'À VENIR' })[s];
   }
 }
-

@@ -4,15 +4,22 @@
 
 - [x] Definir le bareme de points — issue correcte : 3 pts, bonus offensif : 1 pt, bonus defensif : 1 pt (max 5 pts/match, bonus valides seulement si issue correcte)
 - [x] Direction artistique : style vintage jeu video arcade (ref. Jonah Lomu Rugby 1997) — typo bold/condensee, couleurs saturees, UI dense, leaderboard style arcade
+- [x] Stack backend : API REST Express sur AWS Lambda, exposee par API Gateway HTTP API, avec DynamoDB comme base de donnees
+- [x] Infrastructure : Terraform ; region AWS cible : `eu-west-3` (Paris) ; environnements : `dev` et `prod`
+- [x] Adaptateur Express/Lambda retenu : `serverless-http`
+- [ ] Valider les patterns d'acces DynamoDB et decider si un troisieme GSI est necessaire pour `playerId + matchdayId`
+- [ ] Decider si les classements sont calcules a la demande ou materialises
+- [ ] Definir la strategie d'authentification post-V1 et le lien entre l'identite authentifiee et un `Player`
 - [ ] Choisir l'outil IaC Terraform : modules custom ou registry communautaire (terraform-aws-modules) ?
 - [ ] Definir le nom de domaine et la strategie SSL (ACM + CloudFront)
+- [ ] Definir les origines CORS autorisees pour `dev`, `prod` et le developpement local
+- [ ] Configurer l'URL de l'API Angular par environnement (elle cible actuellement `http://localhost:3333/api`)
 
 ---
 
-## Phase 1 — MVP front mocke (`apps/oh-rugby`)
+## Phase 1 — MVP front (`apps/oh-rugby`)
 
-> Objectif : application Angular 100% fonctionnelle avec des donnees mockees en memoire.
-> Aucun backend requis pour cette phase.
+> Objectif : application Angular fonctionnelle, alimentee par l'API locale.
 
 ### Modeles partages (`packages/shared/models`)
 
@@ -28,11 +35,11 @@
 
 ### Donnees mockees
 
-- [ ] Mocker les 14 equipes TOP 14
-- [ ] Mocker les 26 journees avec leurs 7 matchs chacune (calendrier complet de la SPEC)
-- [ ] Mocker les joueurs
-- [ ] Mocker des pronostics existants
-- [ ] Isoler tous les mocks dans `src/mocks/`
+- [x] Definir les 14 equipes TOP 14 dans les donnees de demonstration de l'API
+- [x] Definir les 26 journees avec leurs 7 matchs chacune dans les donnees de demonstration de l'API
+- [x] Definir les joueurs de demonstration dans l'API
+- [x] Definir des pronostics existants dans l'API
+- [x] Deplacer les donnees de demonstration du frontend vers `apps/back-oh-rugby/src/data/`
 
 ### Services (interface identique a ce que l'API exposera plus tard)
 
@@ -62,32 +69,41 @@
 
 ### Setup Lambda
 
-- [ ] Installer `@vendia/serverless-express`
-- [ ] Adapter `src/main.ts` pour exporter un `handler` Lambda (garder `app.listen` pour le dev local)
-- [ ] Configurer CORS pour l'origine CloudFront
+- [x] Installer les dependances runtime : `serverless-http`, AWS SDK DynamoDB et CORS
+- [x] Configurer `serverless-http`
+- [ ] Separer la creation de l'application Express du demarrage local (`createApp` / `app.listen`)
+- [x] Adapter `src/main.ts` pour exporter un `handler` Lambda (garder `app.listen` uniquement pour le dev local)
+- [x] Ajouter les middlewares JSON, CORS et gestion d'erreurs
+- [x] Ajouter un endpoint de sante (`GET /api/health`)
 
 ### Routes API
 
-- [ ] `GET /api/competitions/:id`
-- [ ] `GET /api/matchdays?competitionId=`
-- [ ] `GET /api/matchdays/:id`
-- [ ] `GET /api/players`
-- [ ] `GET /api/predictions?playerId=&matchdayId=`
-- [ ] `PUT /api/predictions/:matchId` (verifie que la journee est active)
-- [ ] `GET /api/ranking?competitionId=`
-- [ ] `GET /api/ranking?competitionId=&matchdayId=`
+- [x] Formaliser le contrat des reponses et erreurs HTTP
+- [x] `GET /api/competitions/:id`
+- [x] `GET /api/matchdays?competitionId=`
+- [x] `GET /api/matchdays/:id`
+- [x] `GET /api/players`
+- [x] `GET /api/predictions?playerId=&matchdayId=`
+- [x] `PUT /api/predictions/:matchId` (valide l'entree et verifie cote serveur que la journee est active)
+- [x] `GET /api/ranking?competitionId=`
+- [x] `GET /api/ranking?competitionId=&matchdayId=`
 
 ### Couche DynamoDB
 
-- [ ] Installer le client AWS SDK v3 (`@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb`)
+- [x] Installer le client AWS SDK v3 (`@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb`)
 - [ ] Creer un module `dynamo.client.ts` (singleton)
+- [ ] Definir les types d'items DynamoDB et les fonctions de mapping domaine ↔ DynamoDB
 - [ ] Creer les repositories : `Competition`, `Matchday`, `Match`, `Player`, `Prediction`, `Ranking`
-- [ ] Implémenter la logique de scoring cote back
+- [ ] Implementer les requetes via `PK/SK`, `MatchdayIndex` et `MatchPredictionsIndex`
+- [ ] Implementer le pattern retenu pour les pronostics d'un joueur par journee
+- [ ] Implementer la logique de scoring cote back, independamment des repositories
+- [ ] Ajouter des tests unitaires des regles metier et des tests d'integration des routes
 
 ### Seed
 
 - [ ] Script de seed DynamoDB : journees, matchs, equipes
 - [ ] Script de seed : joueurs initiaux
+- [x] Deplacer les donnees de demonstration du frontend vers l'API en memoire
 
 ---
 
@@ -96,8 +112,8 @@
 - [ ] Configurer le backend Terraform (S3 remote state + DynamoDB lock)
 - [ ] Creer les workspaces `dev` et `prod`
 - [ ] Module DynamoDB : table `oh-rugby-{env}` avec les deux GSI
-- [ ] Module Lambda : fonction Node.js 20.x + IAM role + policy DynamoDB
-- [ ] Module API Gateway : HTTP API v2 connectee a la Lambda
+- [ ] Module Lambda : runtime Node.js LTS supporte + IAM role + politique DynamoDB au moindre privilege
+- [ ] Module API Gateway : HTTP API v2 connectee a la Lambda, avec le CORS configure par environnement
 - [ ] Module S3 : bucket site statique
 - [ ] Module CloudFront : distribution + regle 404 vers index.html + certificat ACM
 - [ ] Module CloudWatch : log group Lambda
@@ -107,7 +123,7 @@
 
 ## Phase 4 — Branchement Front sur l'API
 
-- [ ] Remplacer les mocks par de vrais appels HTTP (meme interface de service)
+- [x] Remplacer les mocks par de vrais appels HTTP
 - [ ] Gerer les etats de chargement et les erreurs dans l'UI
 - [ ] Tester le flux complet en local (Lambda dev + Angular dev)
 - [ ] Tester le flux complet sur `dev` AWS

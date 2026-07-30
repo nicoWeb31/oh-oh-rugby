@@ -1,14 +1,28 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
 import { Player } from '@org/models';
-import { MOCK_PLAYERS } from '../mocks/players.mock';
+
+const API_URL = 'http://localhost:3333/api';
 
 @Injectable({ providedIn: 'root' })
 export class PlayerService {
-  readonly players = signal<Player[]>(MOCK_PLAYERS);
-  readonly currentPlayer = signal<Player>(MOCK_PLAYERS[0]);
+  private readonly http = inject(HttpClient);
+
+  readonly players = signal<Player[]>([]);
+  readonly currentPlayer = signal<Player | null>(null);
+
+  load(): void {
+    this.http.get<Player[]>(`${API_URL}/players`).subscribe({
+      next: (players) => {
+        this.players.set(players);
+        this.currentPlayer.set(players[0] ?? null);
+      },
+      error: (error) => console.error('Impossible de charger les joueurs.', error),
+    });
+  }
 
   setCurrentPlayer(playerId: string): void {
-    const player = MOCK_PLAYERS.find((p) => p.id === playerId);
+    const player = this.players().find((candidate) => candidate.id === playerId);
     if (player) this.currentPlayer.set(player);
   }
 }

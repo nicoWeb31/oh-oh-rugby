@@ -1,38 +1,53 @@
-import { Injectable, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
 import { Prediction } from '@org/models';
-import { MOCK_PREDICTIONS } from '../mocks/predictions.mock';
+import { RankingService } from './ranking.service';
+
+const API_URL = 'http://localhost:3333/api';
 
 @Injectable({ providedIn: 'root' })
 export class PredictionService {
-  private readonly store = signal<Prediction[]>([...MOCK_PREDICTIONS]);
+  private readonly http = inject(HttpClient);
+  private readonly ranking = inject(RankingService);
+  private readonly store = signal<Prediction[]>([]);
 
-  getForPlayer(playerId: string): Prediction[] {
-    return this.store().filter((p) => p.playerId === playerId);
+  loadForMatchday(playerId: string, matchdayId: string): void {
+    this.http.get<Prediction[]>(`${API_URL}/predictions`, { params: { playerId, matchdayId } }).subscribe({
+      next: (predictions) => {
+        const returnedMatchIds = new Set(predictions.map((prediction) => prediction.matchId));
+        this.store.update((stored) => [
+          ...stored.filter(
+            (prediction) => prediction.playerId !== playerId || !returnedMatchIds.has(prediction.matchId)
+          ),
+          ...predictions,
+        ]);
+      },
+      error: (error) => console.error('Impossible de charger les pronostics.', error),
+    });
   }
 
   getForPlayerAndMatch(playerId: string, matchId: string): Prediction | undefined {
     return this.store().find(
-      (p) => p.playerId === playerId && p.matchId === matchId
-    );
-  }
-
-  getForMatchday(playerId: string, matchdayId: string, matchIds: string[]): Prediction[] {
-    return this.store().filter(
-      (p) => p.playerId === playerId && matchIds.includes(p.matchId)
+      (prediction) => prediction.playerId === playerId && prediction.matchId === matchId
     );
   }
 
   save(prediction: Prediction): void {
-    this.store.update((list) => {
-      const idx = list.findIndex(
-        (p) => p.playerId === prediction.playerId && p.matchId === prediction.matchId
-      );
-      if (idx >= 0) {
-        const updated = [...list];
-        updated[idx] = prediction;
-        return updated;
-      }
-      return [...list, prediction];
+    const { matchId, ...payload } = prediction;
+    this.http.put<Prediction>(`${API_URL}/predictions/${matchId}`, payload).subscribe({
+      next: (savedPrediction) => {
+        this.store.update((stored) => {
+          const index = stored.findIndex(
+            (candidate) => candidate.playerId === savedPrediction.playerId && candidate.matchId === savedPrediction.matchId
+          );
+          if (index === -1) return [...stored, savedPrediction];
+          return stored.map((candidate, candidateIndex) =>
+            candidateIndex === index ? savedPrediction : candidate
+          );
+        });
+        this.ranking.loadGlobal();
+      },
+      error: (error) => console.error('Impossible de sauvegarder le pronostic.', error),
     });
   }
 }

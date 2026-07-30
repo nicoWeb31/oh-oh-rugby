@@ -18,7 +18,7 @@ import { RankingService } from '../../services/ranking.service';
       <div class="tabs">
         <button class="tab" [class.active]="tab() === 'global'" (click)="tab.set('global')">GÉNÉRAL</button>
         @for (md of playedMatchdays(); track md.id) {
-          <button class="tab" [class.active]="tab() === md.id" (click)="tab.set(md.id)">{{ md.label }}</button>
+          <button class="tab" [class.active]="tab() === md.id" (click)="selectTab(md.id)">{{ md.label }}</button>
         }
       </div>
 
@@ -101,9 +101,13 @@ export class RankingComponent {
 
   currentRanking = computed(() => {
     if (this.tab() === 'global') {
-      return this.rankingService.getGlobal(this.matchdayService.getAll());
+      return this.rankingService.getGlobal();
     }
-    const md = this.matchdayService.getById(this.tab());
-    return md ? this.rankingService.getForMatchday(md) : [];
+    return this.rankingService.getForMatchday(this.tab());
   });
+
+  selectTab(matchdayId: string): void {
+    this.tab.set(matchdayId);
+    this.rankingService.loadForMatchday(matchdayId);
+  }
 }

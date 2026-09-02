@@ -16,5 +16,10 @@ export const appRoutes: Route[] = [
     loadComponent: () =>
       import('./pages/ranking/ranking.component').then((m) => m.RankingComponent),
   },
+  {
+    path: 'admin',
+    loadComponent: () =>
+      import('./pages/admin/admin.component').then((m) => m.AdminComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

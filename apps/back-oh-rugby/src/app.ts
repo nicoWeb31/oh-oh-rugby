@@ -151,6 +151,38 @@ export function createApp() {
     }
   });
 
+  // No auth on this route: consistent with the rest of the MVP (no auth
+  // anywhere yet). Anyone with the app URL can record a match result.
+  app.put('/api/matches/:matchId/result', async (req, res, next) => {
+    try {
+      const outcome = req.body?.outcome;
+      const offensiveBonusAwarded = req.body?.offensiveBonusAwarded;
+      const defensiveBonusAwarded = req.body?.defensiveBonusAwarded;
+
+      if (!Object.values(MatchOutcome).includes(outcome)) {
+        res.status(400).json({ message: 'Le résultat est invalide.' });
+        return;
+      }
+      if (typeof offensiveBonusAwarded !== 'boolean' || typeof defensiveBonusAwarded !== 'boolean') {
+        res.status(400).json({ message: 'Les bonus doivent être des booléens.' });
+        return;
+      }
+
+      const matchday = await matchdayRepository.getMatchdayById(matchdayIdFromMatchId(req.params.matchId));
+      const match = matchday?.matches.find((candidate) => candidate.id === req.params.matchId);
+      if (!matchday || !match) {
+        res.status(404).json({ message: 'Match introuvable.' });
+        return;
+      }
+
+      match.result = { outcome, offensiveBonusAwarded, defensiveBonusAwarded };
+      await matchdayRepository.putMatchday(matchday);
+      res.json(match);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.get('/api/ranking', async (req, res, next) => {
     try {
       const competitionId = typeof req.query.competitionId === 'string' ? req.query.competitionId : undefined;

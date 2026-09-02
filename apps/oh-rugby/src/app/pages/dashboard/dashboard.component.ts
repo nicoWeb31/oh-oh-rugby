@@ -1,12 +1,11 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { MatchdayStatus } from '@org/models';
 import { MatchdayService } from '../../services/matchday.service';
 import { RankingService } from '../../services/ranking.service';
 import { FormatDatePipe } from '../../pipes/format-date.pipe';
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'oh-rugby-dashboard',
   imports: [RouterLink, FormatDatePipe],
   template: `
     <div class="dashboard">

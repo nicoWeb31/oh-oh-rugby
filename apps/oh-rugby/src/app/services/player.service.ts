@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Player } from '@org/models';
+import { environment } from '../../environments/environment';
 
-const API_URL = 'http://localhost:3333/api';
+const API_URL = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class PlayerService {

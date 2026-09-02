@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Match, Matchday, MatchdayStatus, MatchOutcome, Prediction } from '@org/models';
+import { Match, MatchdayStatus, MatchOutcome, Prediction } from '@org/models';
 import { MatchdayService } from '../../services/matchday.service';
 import { PredictionService } from '../../services/prediction.service';
 import { PlayerService } from '../../services/player.service';
@@ -9,7 +9,7 @@ import { ScoringService } from '../../services/scoring.service';
 import { FormatDatePipe } from '../../pipes/format-date.pipe';
 
 @Component({
-  selector: 'app-matchday',
+  selector: 'oh-rugby-matchday',
   imports: [RouterLink, FormsModule, FormatDatePipe],
   template: `
     @if (matchday()) {

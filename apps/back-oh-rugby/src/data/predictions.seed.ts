@@ -1,6 +1,6 @@
 import { MatchOutcome, Prediction } from '@org/models';
 
-// Pronostics de Nicolas (p1) — bon joueur
+// Pronostics de Thomas (p1) — bon joueur
 const P1_PREDICTIONS: Prediction[] = [
   // J1
   { id: 'pred-p1-md1-m1', playerId: 'p1', matchId: 'md1-m1', outcome: MatchOutcome.HOME, offensiveBonusPredicted: false, defensiveBonusPredicted: false }, // ✓ 3pts
@@ -28,7 +28,7 @@ const P1_PREDICTIONS: Prediction[] = [
   { id: 'pred-p1-md3-m7', playerId: 'p1', matchId: 'md3-m7', outcome: MatchOutcome.HOME, offensiveBonusPredicted: false, defensiveBonusPredicted: false }, // ✗ 0pts
 ];
 
-// Pronostics de Julien (p2) — joueur moyen
+// Pronostics de Nicolas (p2) — joueur moyen
 const P2_PREDICTIONS: Prediction[] = [
   // J1
   { id: 'pred-p2-md1-m1', playerId: 'p2', matchId: 'md1-m1', outcome: MatchOutcome.HOME, offensiveBonusPredicted: false, defensiveBonusPredicted: false }, // ✓ 3pts
@@ -56,7 +56,7 @@ const P2_PREDICTIONS: Prediction[] = [
   { id: 'pred-p2-md3-m7', playerId: 'p2', matchId: 'md3-m7', outcome: MatchOutcome.AWAY, offensiveBonusPredicted: false, defensiveBonusPredicted: false }, // ✓ 3pts
 ];
 
-// Pronostics de Marie (p3) — meilleure joueuse
+// Pronostics de Marjory (p3) — meilleure joueuse
 const P3_PREDICTIONS: Prediction[] = [
   // J1
   { id: 'pred-p3-md1-m1', playerId: 'p3', matchId: 'md1-m1', outcome: MatchOutcome.HOME, offensiveBonusPredicted: false, defensiveBonusPredicted: false }, // ✓ 3pts

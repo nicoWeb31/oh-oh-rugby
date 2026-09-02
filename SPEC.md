@@ -69,14 +69,17 @@ Le système de points réel du TOP 14 est le suivant :
 
 ## Questions Techniques Ouvertes
 
-Les choix ci-dessous ne remettent pas en cause la stack confirmée (Express sur Lambda et DynamoDB) ; ils devront être tranchés avant le déploiement de l'environnement `dev` :
+Décisions prises pour le déploiement de l'environnement `dev` (détail et justification dans `infra/terraform/README.md`) :
 
-- Quels accès doivent être optimisés dès la V1 dans DynamoDB, en particulier la lecture des pronostics d'un joueur pour une journée et le classement par journée ?
-- Le classement doit-il être calculé à la demande, ou matérialisé et mis à jour après chaque résultat/prediction ?
+- **Accès DynamoDB** : table unique sans GSI. Les matchs sont imbriqués dans l'item `Matchday` (jamais lus indépendamment) et le `matchdayId` d'un `matchId` se dérive de son préfixe (`mdX-mY`), ce qui couvre tous les accès actuels via `PK`/`SK` seuls.
+- **Classement** : calculé à la demande à chaque requête, pas matérialisé — l'échelle V1 (quelques joueurs) rend cela trivial.
+- **Origines CORS** : le Lambda reçoit `ALLOWED_ORIGINS` = domaine CloudFront de l'environnement déployé ; en local, la variable est absente et toutes les origines sont autorisées (comportement déjà en place).
+- **Modules Terraform** : modules internes (`infra/terraform/modules/*`), pas de registry communautaire.
+
+Toujours ouvert :
+
 - Quel mécanisme d'authentification sera introduit après la V1 et comment l'identité du joueur sera-t-elle propagée à l'API ?
-- Quelle origine CloudFront autoriser en `dev` et en `prod`, et faut-il conserver une origine locale pour le développement ?
-- Quel domaine public et quelle stratégie de certificats SSL utiliser ?
-- Faut-il partir sur des modules Terraform internes ou sur des modules communautaires maintenus ?
+- Quel domaine public et quelle stratégie de certificats SSL utiliser ? En attendant, `dev` et `prod` sont servis sur le domaine par défaut `*.cloudfront.net`.
 
 ## Fonctionnalités V1
 

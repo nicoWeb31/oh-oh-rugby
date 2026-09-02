@@ -2,8 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Prediction } from '@org/models';
 import { RankingService } from './ranking.service';
+import { environment } from '../../environments/environment';
 
-const API_URL = 'http://localhost:3333/api';
+const API_URL = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class PredictionService {

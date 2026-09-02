@@ -5,7 +5,7 @@ import { MatchdayService } from '../../services/matchday.service';
 import { RankingService } from '../../services/ranking.service';
 
 @Component({
-  selector: 'app-ranking',
+  selector: 'oh-rugby-ranking',
   imports: [RouterLink],
   template: `
     <div class="ranking-page">

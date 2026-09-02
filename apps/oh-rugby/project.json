@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "oh-rugby",
   "sourceRoot": "apps/oh-rugby/src",
-  "tags": [],
+  "tags": ["scope:rugby"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -36,7 +36,34 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/oh-rugby/src/environments/environment.ts",
+              "with": "apps/oh-rugby/src/environments/environment.prod.ts"
+            }
+          ]
+        },
+        "dev": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/oh-rugby/src/environments/environment.ts",
+              "with": "apps/oh-rugby/src/environments/environment.dev.ts"
+            }
+          ]
         },
         "development": {
           "optimization": false,

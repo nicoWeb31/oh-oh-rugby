@@ -32,7 +32,11 @@ npm exec -- nx run oh-rugby:serve
 
 Arrêter l'un ou l'autre serveur avec `Ctrl+C` dans le terminal correspondant.
 
-Les données de développement sont servies par l'API en mémoire et sont réinitialisées lorsque le backend redémarre. DynamoDB remplacera cette source de données lors de la phase infrastructure.
+En local, le backend lit et écrit dans DynamoDB (voir `infra/terraform/README.md` pour le déploiement) ; sans configuration AWS locale, pointez `DYNAMODB_ENDPOINT` vers une instance DynamoDB Local ou déployez l'environnement `dev` pour tester contre de vraies données.
+
+## Déploiement AWS
+
+L'infrastructure (DynamoDB, Lambda, API Gateway, S3, CloudFront) est gérée par Terraform, déployée automatiquement par GitHub Actions : push sur `develop` → environnement `dev`, push sur `main` → environnement `prod`. Voir `infra/terraform/README.md` pour la procédure de bootstrap (à faire une fois, manuellement).
 
 ### API locale
 

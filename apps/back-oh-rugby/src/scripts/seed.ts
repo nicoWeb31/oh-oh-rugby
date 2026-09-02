@@ -2,7 +2,7 @@ import { BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { ddb, TABLE_NAME } from '../dynamodb/client';
 import { competitionKey, matchdayKey, playerKey, predictionKey } from '../dynamodb/keys';
 import { MOCK_COMPETITION, MOCK_MATCHDAYS } from '../data/matchdays.seed';
-import { MOCK_PLAYERS } from '../data/players.seed';
+import { MOCK_PLAYER_CODES, MOCK_PLAYERS } from '../data/players.seed';
 import { MOCK_PREDICTIONS } from '../data/predictions.seed';
 
 // One-off script to populate a fresh DynamoDB table with demo data.
@@ -15,7 +15,12 @@ async function seed() {
       entityType: 'MATCHDAY',
       ...matchday,
     })),
-    ...MOCK_PLAYERS.map((player) => ({ ...playerKey(player.id), entityType: 'PLAYER', ...player })),
+    ...MOCK_PLAYERS.map((player) => ({
+      ...playerKey(player.id),
+      entityType: 'PLAYER',
+      ...player,
+      code: MOCK_PLAYER_CODES[player.id],
+    })),
     ...MOCK_PREDICTIONS.map((prediction) => ({
       ...predictionKey(prediction.playerId, prediction.matchId),
       entityType: 'PREDICTION',

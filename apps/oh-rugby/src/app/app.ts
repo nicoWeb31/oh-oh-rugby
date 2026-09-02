@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { PlayerService } from './services/player.service';
 import { MatchdayService } from './services/matchday.service';
 import { RankingService } from './services/ranking.service';
@@ -17,17 +17,12 @@ import { RankingService } from './services/ranking.service';
           <a routerLink="/" class="nav-link">ACCUEIL</a>
           <a routerLink="/ranking" class="nav-link">CLASSEMENT</a>
         </nav>
-        @if (playerService.currentPlayer()) {
-        <div class="player-selector">
-          <span class="player-label">JOUEUR</span>
-          <select
-            [value]="playerService.currentPlayer()!.id"
-            (change)="onPlayerChange($event)">
-            @for (p of playerService.players(); track p.id) {
-              <option [value]="p.id">{{ p.displayName }}</option>
-            }
-          </select>
-        </div>
+        @if (playerService.currentPlayer(); as player) {
+          <div class="player-info">
+            <span class="player-label">JOUEUR</span>
+            <span class="player-name">{{ player.displayName }}</span>
+            <button class="logout" (click)="logout()">CHANGER</button>
+          </div>
         }
       </header>
 
@@ -59,13 +54,15 @@ import { RankingService } from './services/ranking.service';
       font-size: 0.7rem; font-weight: 700; letter-spacing: 3px;
     }
     .nav-link:hover { color: var(--gold); }
-    .player-selector { display: flex; align-items: center; gap: 0.5rem; }
+    .player-info { display: flex; align-items: center; gap: 0.6rem; }
     .player-label { font-size: 0.6rem; letter-spacing: 3px; color: var(--muted); }
-    .player-selector select {
-      background: var(--bg); color: var(--text);
-      border: 1px solid var(--border); padding: 0.25rem 0.5rem;
-      font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    .player-name { font-size: 0.8rem; font-weight: 700; color: var(--text); }
+    .logout {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      font-size: 0.6rem; letter-spacing: 2px; padding: 3px 8px; cursor: pointer;
+      font-family: inherit; font-weight: 700;
     }
+    .logout:hover { border-color: var(--gold); color: var(--gold); }
     .main-content { flex: 1; max-width: 640px; width: 100%; margin: 0 auto; padding: 1.5rem 1rem; }
     .footer {
       display: flex; justify-content: space-between;
@@ -79,6 +76,7 @@ export class App {
   playerService = inject(PlayerService);
   private matchdayService = inject(MatchdayService);
   private rankingService = inject(RankingService);
+  private router = inject(Router);
 
   constructor() {
     this.playerService.load();
@@ -86,8 +84,8 @@ export class App {
     this.rankingService.loadGlobal();
   }
 
-  onPlayerChange(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.playerService.setCurrentPlayer(select.value);
+  logout(): void {
+    this.playerService.logout();
+    this.router.navigateByUrl('/login');
   }
 }

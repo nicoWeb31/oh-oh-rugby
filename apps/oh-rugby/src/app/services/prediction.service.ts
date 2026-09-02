@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Prediction } from '@org/models';
 import { RankingService } from './ranking.service';
+import { PlayerService } from './player.service';
 import { environment } from '../../environments/environment';
 
 const API_URL = environment.apiUrl;
@@ -10,6 +11,7 @@ const API_URL = environment.apiUrl;
 export class PredictionService {
   private readonly http = inject(HttpClient);
   private readonly ranking = inject(RankingService);
+  private readonly playerService = inject(PlayerService);
   private readonly store = signal<Prediction[]>([]);
 
   loadForMatchday(playerId: string, matchdayId: string): void {
@@ -35,7 +37,8 @@ export class PredictionService {
 
   save(prediction: Prediction): void {
     const { matchId, ...payload } = prediction;
-    this.http.put<Prediction>(`${API_URL}/predictions/${matchId}`, payload).subscribe({
+    const code = this.playerService.getCode();
+    this.http.put<Prediction>(`${API_URL}/predictions/${matchId}`, { ...payload, code }).subscribe({
       next: (savedPrediction) => {
         this.store.update((stored) => {
           const index = stored.findIndex(

@@ -75,6 +75,29 @@ export function createApp() {
     }
   });
 
+  // Lightweight deterrent against playing as someone else, not real auth
+  // (static codes shared by word of mouth). Used by the frontend's login
+  // screen for immediate feedback; the same check is re-applied server-side
+  // on every write that matters (see PUT /api/predictions/:matchId).
+  app.post('/api/auth/verify', async (req, res, next) => {
+    try {
+      const playerId = requireString(req.body?.playerId);
+      const code = requireString(req.body?.code);
+      if (!playerId || !code) {
+        res.status(400).json({ message: 'playerId et code sont requis.' });
+        return;
+      }
+      if (!(await playerRepository.verifyCode(playerId, code))) {
+        res.status(401).json({ message: 'Code invalide.' });
+        return;
+      }
+      const player = await playerRepository.getPlayer(playerId);
+      res.json(player);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.get('/api/predictions', async (req, res, next) => {
     try {
       const playerId = typeof req.query.playerId === 'string' ? req.query.playerId : undefined;
@@ -108,12 +131,17 @@ export function createApp() {
   app.put('/api/predictions/:matchId', async (req, res, next) => {
     try {
       const playerId = requireString(req.body?.playerId);
+      const code = requireString(req.body?.code);
       const outcome = req.body?.outcome;
       const offensiveBonusPredicted = req.body?.offensiveBonusPredicted;
       const defensiveBonusPredicted = req.body?.defensiveBonusPredicted;
 
       if (!playerId || !(await playerRepository.getPlayer(playerId))) {
         res.status(400).json({ message: 'Le joueur est invalide.' });
+        return;
+      }
+      if (!code || !(await playerRepository.verifyCode(playerId, code))) {
+        res.status(401).json({ message: 'Code invalide.' });
         return;
       }
 

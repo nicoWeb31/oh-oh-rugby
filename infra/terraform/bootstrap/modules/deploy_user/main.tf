@@ -68,12 +68,20 @@ data "aws_iam_policy_document" "permissions" {
     sid = "AppLogs"
     actions = [
       "logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:PutRetentionPolicy",
-      "logs:DescribeLogGroups", "logs:TagResource", "logs:ListTagsForResource",
+      "logs:TagResource", "logs:ListTagsForResource",
     ]
     resources = [
       "arn:aws:logs:${var.region}:${var.account_id}:log-group:/aws/lambda/oh-rugby-${var.env}*",
       "arn:aws:logs:${var.region}:${var.account_id}:log-group:/aws/apigateway/oh-rugby-${var.env}*",
     ]
+  }
+
+  # DescribeLogGroups is a listing call with no single-resource target, so
+  # IAM requires it to be granted on "*" rather than a specific log group ARN.
+  statement {
+    sid       = "AppLogsDescribe"
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
   }
 
   # S3 static site bucket (Terraform-managed) + CI upload/sync at deploy time,

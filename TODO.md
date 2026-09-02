@@ -12,7 +12,7 @@
 - [ ] Definir la strategie d'authentification post-V1 et le lien entre l'identite authentifiee et un `Player`
 - [x] Choisir l'outil IaC Terraform : modules custom ou registry communautaire (terraform-aws-modules) ? — decision : modules internes (`infra/terraform/modules/*`)
 - [ ] Definir le nom de domaine et la strategie SSL (ACM + CloudFront) — differe : le front `dev`/`prod` est servi sur le domaine `*.cloudfront.net` par defaut en attendant l'achat d'un nom de domaine
-- [x] Definir les origines CORS autorisees pour `dev`, `prod` et le developpement local — le Lambda recoit `ALLOWED_ORIGINS` = domaine CloudFront de l'environnement deploye ; en local la variable est absente et toutes les origines sont autorisees (comportement deja code)
+- [ ] Definir les origines CORS autorisees pour `dev`, `prod` et le developpement local — pour l'instant `ALLOWED_ORIGINS` n'est pas defini sur le Lambda (MVP, toutes origines autorisees) ; a restreindre au domaine CloudFront reel avant une exposition plus large
 - [x] Configurer l'URL de l'API Angular par environnement — `environment.ts`/`environment.dev.ts`/`environment.prod.ts` + `fileReplacements`, injectee par le pipeline de deploiement
 
 ---

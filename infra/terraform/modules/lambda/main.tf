@@ -67,9 +67,11 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      NODE_ENV        = var.env == "prod" ? "production" : "development"
-      DYNAMODB_TABLE  = var.dynamodb_table_name
-      ALLOWED_ORIGINS = var.allowed_origins
+      NODE_ENV       = var.env == "prod" ? "production" : "development"
+      DYNAMODB_TABLE = var.dynamodb_table_name
+      # ALLOWED_ORIGINS intentionally unset for the MVP: Express then allows
+      # every origin (see apps/back-oh-rugby/src/app.ts). Reinstate this once
+      # the frontend origin is stable and CORS should be locked down.
     }
   }
 

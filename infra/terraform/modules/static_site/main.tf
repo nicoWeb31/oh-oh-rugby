@@ -15,6 +15,45 @@ resource "aws_s3_bucket_public_access_block" "site" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket" "logs" {
+  bucket = "oh-rugby-${var.env}-cf-logs-${var.account_suffix}"
+
+  tags = {
+    Project     = "oh-rugby"
+    Environment = var.env
+  }
+}
+
+resource "aws_s3_bucket_ownership_controls" "logs" {
+  bucket = aws_s3_bucket.logs.id
+  rule {
+    # CloudFront standard logging still delivers via the legacy ACL-based
+    # method, which requires ACLs to be enabled on the destination bucket.
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "logs" {
+  bucket                  = aws_s3_bucket.logs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "logs" {
+  bucket = aws_s3_bucket.logs.id
+  rule {
+    id     = "expire-logs"
+    status = "Enabled"
+    filter {}
+
+    expiration {
+      days = 30
+    }
+  }
+}
+
 resource "aws_cloudfront_origin_access_control" "site" {
   name                              = "oh-rugby-${var.env}-oac"
   origin_access_control_origin_type = "s3"
@@ -48,6 +87,12 @@ resource "aws_cloudfront_distribution" "site" {
     }
   }
 
+  logging_config {
+    include_cookies = false
+    bucket          = aws_s3_bucket.logs.bucket_domain_name
+    prefix          = "cloudfront/"
+  }
+
   # Angular SPA: unmatched routes must fall back to index.html.
   custom_error_response {
     error_code         = 403
@@ -75,6 +120,8 @@ resource "aws_cloudfront_distribution" "site" {
     Project     = "oh-rugby"
     Environment = var.env
   }
+
+  depends_on = [aws_s3_bucket_ownership_controls.logs]
 }
 
 data "aws_iam_policy_document" "site" {

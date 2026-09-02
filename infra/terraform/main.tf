@@ -9,20 +9,11 @@ module "static_site" {
   account_suffix = var.account_id
 }
 
-locals {
-  cloudfront_origin = "https://${module.static_site.cloudfront_domain_name}"
-  allowed_origins = join(",", compact([
-    local.cloudfront_origin,
-    var.allowed_origins,
-  ]))
-}
-
 module "lambda" {
   source              = "./modules/lambda"
   env                 = var.env
   dynamodb_table_arn  = module.dynamodb.table_arn
   dynamodb_table_name = module.dynamodb.table_name
-  allowed_origins     = local.allowed_origins
 }
 
 module "api_gateway" {

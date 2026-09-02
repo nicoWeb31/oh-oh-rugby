@@ -73,7 +73,7 @@ Décisions prises pour le déploiement de l'environnement `dev` (détail et just
 
 - **Accès DynamoDB** : table unique sans GSI. Les matchs sont imbriqués dans l'item `Matchday` (jamais lus indépendamment) et le `matchdayId` d'un `matchId` se dérive de son préfixe (`mdX-mY`), ce qui couvre tous les accès actuels via `PK`/`SK` seuls.
 - **Classement** : calculé à la demande à chaque requête, pas matérialisé — l'échelle V1 (quelques joueurs) rend cela trivial.
-- **Origines CORS** : le Lambda reçoit `ALLOWED_ORIGINS` = domaine CloudFront de l'environnement déployé ; en local, la variable est absente et toutes les origines sont autorisées (comportement déjà en place).
+- **CORS ouvert (MVP)** : `ALLOWED_ORIGINS` n'est pour l'instant pas défini sur le Lambda déployé, donc toutes les origines sont autorisées (comportement déjà en place pour le développement local). À restreindre au domaine CloudFront réel avant une exposition plus large.
 - **Modules Terraform** : modules internes (`infra/terraform/modules/*`), pas de registry communautaire.
 
 Toujours ouvert :

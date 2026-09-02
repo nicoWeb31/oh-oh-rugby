@@ -18,9 +18,3 @@ variable "account_id" {
   description = "AWS account id, used to keep the S3 site bucket name globally unique"
   type        = string
 }
-
-variable "allowed_origins" {
-  description = "Extra origins to allow via CORS in addition to the deployed CloudFront domain (comma-separated, may be empty)"
-  type        = string
-  default     = ""
-}

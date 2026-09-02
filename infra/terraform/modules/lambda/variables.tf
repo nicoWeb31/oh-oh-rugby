@@ -11,11 +11,6 @@ variable "dynamodb_table_name" {
   type = string
 }
 
-variable "allowed_origins" {
-  description = "Comma-separated list of origins allowed by CORS"
-  type        = string
-}
-
 variable "node_runtime" {
   description = "Lambda Node.js runtime identifier"
   type        = string

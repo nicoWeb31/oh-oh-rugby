@@ -24,9 +24,12 @@ update-function-code` et `aws s3 sync`. Cela évite de faire rejouer un `apply`
 - **Pas de domaine personnalisé / ACM** pour l'instant : le front est servi sur
   le domaine `*.cloudfront.net` par défaut. À ajouter plus tard si un nom de
   domaine est acheté.
-- **Origines CORS** : le Lambda reçoit `ALLOWED_ORIGINS` = domaine CloudFront
-  déployé (+ toute origine additionnelle passée via `-var allowed_origins=...`
-  pour un besoin ponctuel, ex. tester depuis `localhost` contre l'API `dev`).
+- **CORS ouvert (MVP)** : `ALLOWED_ORIGINS` n'est volontairement pas défini sur
+  le Lambda, donc l'API accepte toutes les origines (comportement déjà codé
+  dans `app.ts` en l'absence de cette variable). À restreindre au domaine
+  CloudFront réel avant d'exposer l'app plus largement.
+- **Logs CloudFront → S3** : chaque environnement a son bucket de logs dédié
+  (`oh-rugby-{env}-cf-logs-{account_id}`), rétention 30 jours.
 
 ## Étape unique : bootstrap (à lancer une seule fois, en local, avec vos identifiants AWS)
 

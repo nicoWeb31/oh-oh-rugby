@@ -76,13 +76,16 @@ data "aws_iam_policy_document" "permissions" {
     ]
   }
 
-  # S3 static site bucket (Terraform-managed) + CI upload/sync at deploy time.
+  # S3 static site bucket (Terraform-managed) + CI upload/sync at deploy time,
+  # plus the CloudFront access logs bucket.
   statement {
     sid     = "AppSiteBucket"
     actions = ["s3:*"]
     resources = [
       "arn:aws:s3:::oh-rugby-${var.env}-site-${var.account_id}",
       "arn:aws:s3:::oh-rugby-${var.env}-site-${var.account_id}/*",
+      "arn:aws:s3:::oh-rugby-${var.env}-cf-logs-${var.account_id}",
+      "arn:aws:s3:::oh-rugby-${var.env}-cf-logs-${var.account_id}/*",
     ]
   }
 
@@ -108,8 +111,14 @@ data "aws_iam_policy_document" "permissions" {
   }
 }
 
-resource "aws_iam_user_policy" "deploy" {
+# Inline user policies cap out at 2048 bytes, too small for this policy.
+# A customer-managed policy allows up to 6144 bytes.
+resource "aws_iam_policy" "deploy" {
   name   = "oh-rugby-${var.env}-deploy"
-  user   = aws_iam_user.deploy.name
   policy = data.aws_iam_policy_document.permissions.json
+}
+
+resource "aws_iam_user_policy_attachment" "deploy" {
+  user       = aws_iam_user.deploy.name
+  policy_arn = aws_iam_policy.deploy.arn
 }

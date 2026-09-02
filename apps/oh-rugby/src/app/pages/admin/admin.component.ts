@@ -186,9 +186,11 @@ export class AdminComponent {
   submit(match: Match): void {
     const { outcome, offensiveBonusAwarded, defensiveBonusAwarded } = this.draft(match.id);
     if (!outcome) return;
-    this.matchdayService.submitResult(match.id, { outcome, offensiveBonusAwarded, defensiveBonusAwarded });
-    this.savedId.set(match.id);
-    setTimeout(() => this.savedId.set(null), 2000);
+    this.matchdayService.submitResult(match.id, { outcome, offensiveBonusAwarded, defensiveBonusAwarded }, (success) => {
+      if (!success) return;
+      this.savedId.set(match.id);
+      setTimeout(() => this.savedId.set(null), 2000);
+    });
   }
 
   private updateDraft(matchId: string, patch: Partial<Draft>): void {

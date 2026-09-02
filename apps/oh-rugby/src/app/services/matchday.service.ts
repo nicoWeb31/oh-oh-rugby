@@ -53,7 +53,7 @@ export class MatchdayService {
     return this.matchdays().find((matchday) => this.getStatus(matchday) === MatchdayStatus.ACTIVE);
   }
 
-  submitResult(matchId: string, result: MatchResult): void {
+  submitResult(matchId: string, result: MatchResult, onDone?: (success: boolean) => void): void {
     this.http.put<Match>(`${API_URL}/matches/${matchId}/result`, result).subscribe({
       next: (updatedMatch) => {
         this.matchdays.update((matchdays) =>
@@ -63,8 +63,12 @@ export class MatchdayService {
           }))
         );
         this.ranking.loadGlobal();
+        onDone?.(true);
       },
-      error: (error) => console.error('Impossible de saisir le résultat.', error),
+      error: (error) => {
+        console.error('Impossible de saisir le résultat.', error);
+        onDone?.(false);
+      },
     });
   }
 }

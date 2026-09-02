@@ -76,11 +76,17 @@ data "aws_iam_policy_document" "permissions" {
     ]
   }
 
-  # DescribeLogGroups is a listing call with no single-resource target, so
-  # IAM requires it to be granted on "*" rather than a specific log group ARN.
+  # These CloudWatch Logs actions have no single-resource target (listing
+  # calls, or the cross-service "log delivery" API API Gateway access
+  # logging relies on), so IAM requires Resource: "*" for all of them.
   statement {
-    sid       = "AppLogsDescribe"
-    actions   = ["logs:DescribeLogGroups"]
+    sid = "AppLogsAccountLevel"
+    actions = [
+      "logs:DescribeLogGroups",
+      "logs:CreateLogDelivery", "logs:GetLogDelivery", "logs:UpdateLogDelivery",
+      "logs:DeleteLogDelivery", "logs:ListLogDeliveries",
+      "logs:PutResourcePolicy", "logs:DescribeResourcePolicies",
+    ]
     resources = ["*"]
   }
 

@@ -1,65 +1,76 @@
-# Nx Angular Repository
+# OhRugby
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
-✨ A repository showcasing key [Nx](https://nx.dev) features for Angular monorepos ✨
-🚀 If you haven't connected to Nx Cloud yet, [complete your setup here](https://cloud.nx.app/get-started). Get faster builds with remote caching, distributed task execution, and self-healing CI. [See how your workspace can benefit](#nx-cloud).
-## 📦 Project Overview
+Application de pronostics de rugby, construite avec Angular et une API Express destinée à AWS Lambda.
 
-This repository demonstrates a production-ready Angular monorepo with:
+## Démarrage local
 
-- **2 Applications**
-
-  - `shop` - Angular e-commerce application with product listings and detail views
-  - `api` - Backend API with Docker support serving product data
-
-- **6 Libraries**
-
-  - `@org/feature-products` - Product listing feature (Angular)
-  - `@org/feature-product-detail` - Product detail feature (Angular)
-  - `@org/data` - Data access layer for shop features
-  - `@org/shared-ui` - Shared UI components
-  - `@org/models` - Shared data models
-  - `@org/products` - API product service library
-
-- **E2E Testing**
-  - `shop-e2e` - Playwright tests for the shop application
-
-## 🚀 Quick Start
+Installer les dépendances une seule fois :
 
 ```bash
-# Clone the repository
-git clone <your-fork-url>
-cd <your-repository-name>
-
-# Install dependencies
-# (Note: You may need --legacy-peer-deps)
 npm install
+```
 
-# Serve the Angular shop application (this will simultaneously serve the API backend)
-npx nx run shop:serve
+Démarrer l'API Express dans un premier terminal :
 
-# ...or you can serve the API separately
-npx nx run api:serve
+```bash
+npm exec -- nx run back-oh-rugby:serve
+```
 
-# Build all projects
-npx nx run-many -t build
+L'API répond sur `http://localhost:3333/api` ; vérifier son état avec :
 
-# Run tests
-npx nx run-many -t test
+```bash
+curl http://localhost:3333/api/health
+```
 
-# Lint all projects
-npx nx run-many -t lint
+Démarrer le frontend Angular dans un second terminal :
 
-# Run e2e tests
-npx nx run shop-e2e:e2e
+```bash
+npm exec -- nx run oh-rugby:serve
+```
 
-# Run tasks in parallel
+Arrêter l'un ou l'autre serveur avec `Ctrl+C` dans le terminal correspondant.
 
-npx nx run-many -t lint test build e2e --parallel=3
+En local, le backend lit et écrit dans DynamoDB (voir `infra/terraform/README.md` pour le déploiement) ; sans configuration AWS locale, pointez `DYNAMODB_ENDPOINT` vers une instance DynamoDB Local ou déployez l'environnement `dev` pour tester contre de vraies données.
 
-# Visualize the project graph
-npx nx graph
+## Déploiement AWS
+
+L'infrastructure (DynamoDB, Lambda, API Gateway, S3, CloudFront) est gérée par Terraform, déployée automatiquement par GitHub Actions : push sur `develop` → environnement `dev`, push sur `main` → environnement `prod`. Voir `infra/terraform/README.md` pour la procédure de bootstrap (à faire une fois, manuellement).
+
+### API locale
+
+| Méthode | Route |
+| --- | --- |
+| `GET` | `/api/health` |
+| `GET` | `/api/competitions/comp1` |
+| `GET` | `/api/matchdays?competitionId=comp1` |
+| `GET` | `/api/players` |
+| `GET` | `/api/predictions?playerId=p1&matchdayId=md5` |
+| `PUT` | `/api/predictions/:matchId` |
+| `GET` | `/api/ranking?competitionId=comp1` |
+
+Construire les applications de production :
+
+```bash
+npm exec -- nx run oh-rugby:build --configuration=production
+npm exec -- nx run back-oh-rugby:build --configuration=production
+```
+
+## Vue d’ensemble
+
+- `oh-rugby` : frontend Angular.
+- `back-oh-rugby` : API Express, exécutée localement avec Node puis déployée dans AWS Lambda.
+- `models` : modèles TypeScript partagés.
+
+Commandes Nx utiles :
+
+```bash
+# Construire les deux applications
+npm exec -- nx run-many -t build --projects=oh-rugby,back-oh-rugby
+
+# Voir le graphe des dépendances
+npm exec -- nx graph
 ```
 
 ## ⭐ Featured Nx Capabilities

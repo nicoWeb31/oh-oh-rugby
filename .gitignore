@@ -54,3 +54,17 @@ vitest.config.*.timestamp*
 .nx/polygraph
 .nx/self-healing
 .nx/migrate-runs
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+infra/terraform/modules/lambda/placeholder.zip

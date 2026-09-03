@@ -1,0 +1,105 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Target environment: dev or prod'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: eu-west-3
+  TF_DIR: infra/terraform
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Lint, test and build the backend
+        run: npx nx run-many -t lint test build --projects=back-oh-rugby
+
+      - name: Lint and test the frontend
+        run: npx nx run-many -t lint test --projects=oh-rugby
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '1.13.4'
+
+      - name: Terraform init
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform init -backend-config=envs/${{ inputs.environment }}.backend.hcl
+
+      - name: Terraform apply
+        working-directory: ${{ env.TF_DIR }}
+        run: terraform apply -auto-approve -var-file=envs/${{ inputs.environment }}.tfvars
+
+      - name: Read Terraform outputs
+        id: tf
+        working-directory: ${{ env.TF_DIR }}
+        run: |
+          echo "api_url=$(terraform output -raw api_url)" >> "$GITHUB_OUTPUT"
+          echo "cloudfront_distribution_id=$(terraform output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
+          echo "site_bucket_name=$(terraform output -raw site_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "lambda_function_name=$(terraform output -raw lambda_function_name)" >> "$GITHUB_OUTPUT"
+
+      - name: Build backend for Lambda
+        run: npx nx run back-oh-rugby:build --configuration=production
+
+      - name: Package and push Lambda code
+        working-directory: dist/apps/back-oh-rugby
+        run: |
+          npm install --omit=dev --no-audit --no-fund
+          zip -r function.zip . -x '*.map'
+          aws lambda update-function-code \
+            --function-name "${{ steps.tf.outputs.lambda_function_name }}" \
+            --zip-file fileb://function.zip
+          aws lambda wait function-updated \
+            --function-name "${{ steps.tf.outputs.lambda_function_name }}"
+
+      - name: Inject API URL into the Angular environment
+        run: |
+          cat > apps/oh-rugby/src/environments/environment.${{ inputs.environment == 'prod' && 'prod' || 'dev' }}.ts <<EOF
+          export const environment = {
+            production: ${{ inputs.environment == 'prod' && 'true' || 'false' }},
+            apiUrl: '${{ steps.tf.outputs.api_url }}/api',
+          };
+          EOF
+
+      - name: Build frontend
+        run: npx nx run oh-rugby:build --configuration=${{ inputs.environment == 'prod' && 'production' || 'dev' }}
+
+      - name: Deploy frontend to S3
+        run: |
+          aws s3 sync dist/apps/oh-rugby/browser "s3://${{ steps.tf.outputs.site_bucket_name }}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.tf.outputs.cloudfront_distribution_id }}" \
+            --paths "/*"
+
+      - name: Summary
+        run: |
+          echo "### Deployed to ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- API: ${{ steps.tf.outputs.api_url }}/api" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Front: https://$(cd ${{ env.TF_DIR }} && terraform output -raw cloudfront_domain_name)" >> "$GITHUB_STEP_SUMMARY"

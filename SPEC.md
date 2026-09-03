@@ -11,7 +11,7 @@ Le principe de base :
 - pour chaque journée, les joueurs saisissent leurs pronostics match par match ;
 - un classement est calculé à partir des points gagnés sur chaque pronostic.
 
-Le projet peut démarrer côté front avec des données mockées. L'architecture backend et la persistance seront définies plus tard.
+Le frontend est alimenté par l'API locale. Les données de démonstration sont hébergées temporairement dans l'API ; la cible de persistance reste DynamoDB pour le déploiement AWS.
 
 ## Vision Produit
 
@@ -64,8 +64,22 @@ Le système de points réel du TOP 14 est le suivant :
 
 ## Questions Métier Ouvertes
 
-- Le barème exact de points du jeu de pronostics reste à définir.
-- Le niveau de détail de la saisie UI pour les bonus reste à préciser.
+- Le barème lié aux scores exacts, prévu dans une itération ultérieure, reste à définir.
+- Le détail de la saisie des bonus dans l'interface (par équipe ou sous une forme simplifiée) reste à préciser.
+
+## Questions Techniques Ouvertes
+
+Décisions prises pour le déploiement de l'environnement `dev` (détail et justification dans `infra/terraform/README.md`) :
+
+- **Accès DynamoDB** : table unique sans GSI. Les matchs sont imbriqués dans l'item `Matchday` (jamais lus indépendamment) et le `matchdayId` d'un `matchId` se dérive de son préfixe (`mdX-mY`), ce qui couvre tous les accès actuels via `PK`/`SK` seuls.
+- **Classement** : calculé à la demande à chaque requête, pas matérialisé — l'échelle V1 (quelques joueurs) rend cela trivial.
+- **CORS ouvert (MVP)** : `ALLOWED_ORIGINS` n'est pour l'instant pas défini sur le Lambda déployé, donc toutes les origines sont autorisées (comportement déjà en place pour le développement local). À restreindre au domaine CloudFront réel avant une exposition plus large.
+- **Modules Terraform** : modules internes (`infra/terraform/modules/*`), pas de registry communautaire.
+
+Toujours ouvert :
+
+- Quel mécanisme d'authentification sera introduit après la V1 et comment l'identité du joueur sera-t-elle propagée à l'API ?
+- Quel domaine public et quelle stratégie de certificats SSL utiliser ? En attendant, `dev` et `prod` sont servis sur le domaine par défaut `*.cloudfront.net`.
 
 ## Fonctionnalités V1
 
@@ -99,15 +113,14 @@ Le système de points réel du TOP 14 est le suivant :
 ## Hors Périmètre Immédiat
 
 - authentification réelle ;
-- backend final ;
-- persistance réelle ;
 - gestion d'administration complète ;
 - saisie des scores exacts ;
-- import automatique de résultats officiels.
+- import automatique de résultats officiels ;
+- pipeline CI/CD automatisé (déploiements manuels dans un premier temps).
 
-## Proposition de Modèle Front Mocké
+## Modèle de données de démonstration
 
-Pour démarrer le front sans figer le backend, on peut mocker les entités suivantes :
+Les entités suivantes sont partagées par le frontend et l'API. En local, les données de démonstration sont stockées dans `apps/back-oh-rugby/src/data/`, et non dans le frontend.
 
 - `Competition`
   - `id`
@@ -147,17 +160,32 @@ Pour démarrer le front sans figer le backend, on peut mocker les entités suiva
   - `points`
   - `rank`
 
-## Règles de Scoring à Définir
+## Barème de Scoring des Pronostics
 
-Le scoring des résultats réels est connu, mais le scoring du jeu de pronostics reste à définir. La spec doit réserver la place pour :
+| Pronostic | Points |
+|---|---|
+| Issue correcte (domicile / nul / extérieur) | 3 pts |
+| Bonus offensif correctement prévu | 1 pt |
+| Bonus défensif correctement prévu | 1 pt |
 
-- points si l'issue du match est correcte ;
-- points si le nul est correctement pronostiqué ;
-- points supplémentaires si le bonus offensif est correctement pronostiqué ;
-- points supplémentaires si le bonus défensif est correctement pronostiqué ;
-- éventuels bonus supplémentaires plus tard si on introduit le score exact.
+- Maximum par match : **5 pts**
+- Un pronostic non saisi vaut **0 pt** pour ce match
+- Les bonus ne rapportent des points que si l'issue est également correcte
+
+> Score exact non pris en compte en V1 — prévu pour une itération ultérieure.
 
 ## UX Cible V1
+
+### Direction artistique — style vintage jeu vidéo (référence : Jonah Lomu Rugby, 1997)
+
+- typographie bold, pixelisée ou condensée — esprit arcade ;
+- palette de couleurs saturées, contrastées, peu de nuances ;
+- UI dense et directe : pas de blancs excessifs, tout visible d'un coup d'œil ;
+- icônes simples et iconiques (maillot, ballon, score) plutôt que des illustrations ;
+- animations légères style "score qui s'affiche" plutôt que transitions fluides ;
+- classement affiché comme un tableau de scores d'arcade.
+
+### Structure des écrans
 
 - page d'accueil ou dashboard avec la compétition active ;
 - liste ou tabs des journées ;
@@ -167,14 +195,149 @@ Le scoring des résultats réels est connu, mais le scoring du jeu de pronostics
   - à venir ;
   - active ;
   - verrouillée ;
-- écran de classement lisible sur mobile.
+- écran de classement lisible sur mobile, style leaderboard arcade.
+
+## Architecture Technique
+
+### Vue d'ensemble
+
+```
+[Navigateur]
+     │
+     ▼
+[Angular – S3 + CloudFront]
+     │  HTTP/REST
+     ▼
+[API Gateway]
+     │
+     ▼
+[AWS Lambda – Express (handler)]
+     │
+     ▼
+[DynamoDB]
+```
+
+### Décisions confirmées
+
+| Sujet | Décision |
+| --- | --- |
+| API | REST, servie par Express |
+| Exécution | AWS Lambda derrière API Gateway HTTP API (v2) |
+| Persistance | DynamoDB, une table par environnement |
+| Infrastructure | Terraform |
+| Région cible | `eu-west-3` (Paris) |
+| Environnements | `dev` et `prod` |
+
+La cible AWS est une API sans état : elle ne conserve aucune session en mémoire entre deux invocations Lambda et persiste les données dans DynamoDB. L'implémentation locale actuelle conserve seulement les données de démonstration en mémoire de processus ; elle est donc temporaire et non durable. Les règles métier, notamment le verrouillage d'une journée et le calcul des points, sont appliquées côté serveur afin de ne pas dépendre du client Angular.
+
+### Frontend — Angular sur S3
+
+- Application : `apps/oh-rugby` (Angular, déjà créé)
+- Build : `npm exec -- nx run oh-rugby:build --configuration=production` → `dist/apps/oh-rugby/browser/`
+- Déploiement : bucket S3 en mode site statique, distribué via CloudFront
+- Routing SPA : rediriger les 404 vers `index.html` (règle d'erreur CloudFront ou S3)
+- Variables d'environnement : l'URL de l'API est injectée au build via `environment.ts`
+
+### Backend — Express sur AWS Lambda
+
+- Application : `apps/back-oh-rugby` (Express, déjà créé)
+- Express porte les routes, les middlewares (CORS, validation, gestion d'erreurs) et l'orchestration des cas d'usage.
+- API Gateway reçoit les requêtes HTTP et les transmet en proxy à la Lambda ; la Lambda convertit l'événement API Gateway en requête Express via un adaptateur dédié.
+- L'application Express doit être créée indépendamment du démarrage local (par exemple `createApp()`), afin de partager la même configuration entre le serveur de développement et le `handler` Lambda.
+- Point d'entrée Lambda : `handler` exporté depuis `src/main.ts`; `app.listen` ne doit être exécuté qu'en développement local.
+- L'adaptateur Express/Lambda retenu est `serverless-http`.
+- Build : `npm exec -- nx run back-oh-rugby:build --configuration=production` → `dist/apps/back-oh-rugby/`
+- Déploiement : fonction Lambda avec une version Node.js LTS prise en charge par AWS au moment du déploiement, exposée via API Gateway HTTP API (v2).
+- CORS : si `ALLOWED_ORIGINS` est défini, il contient la liste blanche d'origines séparées par des virgules. En l'absence de cette variable, toutes les origines sont autorisées pour faciliter le développement local ; ce comportement devra être interdit en production.
+- Observabilité : logs structurés dans CloudWatch, incluant un identifiant de requête et les erreurs applicatives sans exposer de données personnelles.
+
+#### Dépendances et exécution locale
+
+| Dépendance | Rôle |
+| --- | --- |
+| `express` | Routes et middlewares de l'API |
+| `serverless-http` | Adaptation de l'application Express en handler Lambda |
+| `@aws-sdk/client-dynamodb` | Client DynamoDB AWS SDK v3 |
+| `@aws-sdk/lib-dynamodb` | Commandes DynamoDB de haut niveau (`DocumentClient`) |
+| `cors` | Gestion de la liste blanche des origines HTTP |
+
+Le développement local utilise le serveur Express standard ; aucun émulateur Lambda n'est requis pour démarrer l'API :
+
+```bash
+npm install
+npm exec -- nx run back-oh-rugby:serve
+```
+
+L'API est alors disponible sur `http://localhost:3333/api`; `GET /api/health` permet de vérifier son démarrage. Lors de l'ajout de DynamoDB, le client devra pouvoir recevoir une URL d'endpoint locale pour les tests ou un émulateur, sans modifier le code métier.
+
+En développement, les données de démonstration (compétition, 26 journées, joueurs et pronostics) sont fournies par l'API en mémoire depuis `apps/back-oh-rugby/src/data/`. Elles sont réinitialisées au redémarrage du backend. Le frontend ne contient plus de mocks et interroge `http://localhost:3333/api` via `HttpClient`.
+
+#### Contrat et responsabilités de l'API
+
+- Les entrées HTTP sont validées avant toute écriture ; les erreurs utilisent un format JSON cohérent.
+- La route d'écriture d'un pronostic vérifie côté serveur que la journée est active, que le match appartient bien à cette journée et que la valeur du pronostic est valide.
+- Les futurs repositories DynamoDB ne contiendront pas de règles métier ; ils traduiront les modèles de domaine vers les items DynamoDB.
+- Les calculs de classement et de score restent testables sans AWS, dans une couche métier dédiée.
+
+#### Endpoints actuellement disponibles
+
+| Méthode | Route | Usage |
+| --- | --- | --- |
+| `GET` | `/api/health` | Vérifier que l'API est disponible |
+| `GET` | `/api/competitions/:id` | Lire la compétition |
+| `GET` | `/api/matchdays?competitionId=` | Lister les journées et leurs matchs |
+| `GET` | `/api/matchdays/:id` | Lire une journée |
+| `GET` | `/api/players` | Lister les joueurs |
+| `GET` | `/api/predictions?playerId=&matchdayId=` | Lire les pronostics d'un joueur |
+| `PUT` | `/api/predictions/:matchId` | Créer ou modifier un pronostic actif |
+| `GET` | `/api/ranking?competitionId=&matchdayId=` | Lire le classement global ou d'une journée |
+
+### Base de données — DynamoDB
+
+- Table principale : `oh-rugby-{env}` (single-table design)
+- Clé de partition (`PK`) et clé de tri (`SK`) selon le pattern suivant. Chaque item porte aussi un attribut `entityType` et les dates sont enregistrées en ISO 8601 UTC.
+
+| Entité | PK | SK |
+|---|---|---|
+| Competition | `COMP#{id}` | `META` |
+| Matchday | `COMP#{compId}` | `MATCHDAY#{id}` |
+| Match | `MATCHDAY#{matchdayId}` | `MATCH#{id}` |
+| Player | `PLAYER#{id}` | `META` |
+| Prediction | `PLAYER#{playerId}` | `PRED#MATCH#{matchId}` |
+| RankingEntry global | `COMP#{compId}#RANK#GLOBAL` | `PLAYER#{playerId}` |
+| RankingEntry par journée | `COMP#{compId}#RANK#MATCHDAY#{matchdayId}` | `PLAYER#{playerId}` |
+
+- Index secondaire global (GSI) `MatchdayIndex` : `GSI1PK = MATCHDAY#{matchdayId}`, `GSI1SK = MATCH#{matchId}` pour récupérer tous les matchs d'une journée.
+- Index secondaire global (GSI) `MatchPredictionsIndex` : `GSI2PK = MATCH#{matchId}`, `GSI2SK = PLAYER#{playerId}` pour récupérer tous les pronostics d'un match.
+- Un accès direct « pronostics d'un joueur pour une journée » n'est pas encore couvert par ces deux index. Il est explicitement à décider avant l'implémentation : troisième GSI, ou lecture ciblée de la partition du joueur si le volume le permet.
+- Les entrées de classement sont des projections de lecture : leur stratégie de mise à jour (à la demande ou matérialisée) reste à décider.
+- Région AWS : `eu-west-3` (Paris)
+- Environnements : `dev` et `prod` (deux tables séparées)
+
+#### Accès attendus en V1
+
+| Besoin | Accès DynamoDB prévu |
+| --- | --- |
+| Lire une compétition et ses journées | `Query` sur `PK = COMP#{competitionId}` |
+| Lire les matchs d'une journée | `Query` sur `MatchdayIndex` |
+| Lire les pronostics d'un match | `Query` sur `MatchPredictionsIndex` |
+| Lire les pronostics d'un joueur pour une journée | À décider avant le développement du repository |
+| Lire un classement global ou par journée | `Query` sur la partition de classement concernée |
+
+### Infrastructure
+
+- IaC : **Terraform**
+- Ressources gérées : Lambda, API Gateway, DynamoDB, S3, CloudFront, IAM roles
+- Variables d'environnement Lambda : `DYNAMODB_TABLE`, `NODE_ENV`, `ALLOWED_ORIGINS`
+- Logs : CloudWatch Logs (groupe `/aws/lambda/back-oh-rugby-{env}`)
+- Pas de VPC (DynamoDB accessible via endpoint public)
 
 ## Stratégie Technique Court Terme
 
-- construire le front d'abord avec des mocks TypeScript ;
-- isoler les données mockées dans des fichiers dédiés ;
-- séparer les modèles métier, les données mockées et la logique de calcul du classement ;
-- prévoir une couche de service facilement remplaçable par une API plus tard.
+- fournir les données de démonstration depuis l'API locale en mémoire ;
+- séparer les modèles métier, les données de développement et la logique de calcul du classement ;
+- conserver les services Angular comme clients HTTP de l'API ;
+- remplacer les données en mémoire par DynamoDB sans changer le contrat HTTP du frontend.
 
 ## Calendrier des Matchs
 

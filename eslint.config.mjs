@@ -33,6 +33,10 @@ export default [
               onlyDependOnLibsWithTags: ['scope:api', 'scope:shared'],
             },
             {
+              sourceTag: 'scope:rugby',
+              onlyDependOnLibsWithTags: ['scope:rugby', 'scope:shared'],
+            },
+            {
               sourceTag: 'type:data',
               onlyDependOnLibsWithTags: ['type:data'],
             },

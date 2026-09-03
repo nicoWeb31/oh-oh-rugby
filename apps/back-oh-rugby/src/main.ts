@@ -1,21 +1,18 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
+import serverless from 'serverless-http';
+import { createApp } from './app';
 
-import express from 'express';
-import * as path from 'path';
+export const app = createApp();
+export const handler = serverless(app);
 
-const app = express();
-
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
-
-app.get('/api', (req, res) => {
-  res.send({ message: 'Welcome to back-oh-rugby!' });
-});
-
-const port = process.env.PORT || 3333;
-const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api`);
-});
-server.on('error', console.error);
+// `require.main === module` is unreliable here: AWS Lambda's Node.js runtime
+// loads this CommonJS bundle via dynamic import(), which makes Node treat it
+// as its own require graph root — the check evaluates true even inside
+// Lambda, which used to start a useless (and blocking) local server on every
+// cold start. AWS_LAMBDA_FUNCTION_NAME is only ever set inside a real Lambda
+// execution environment, so it reliably distinguishes local dev from Lambda.
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  const port = Number(process.env.PORT) || 3333;
+  app.listen(port, () => {
+    console.log(`Listening at http://localhost:${port}/api`);
+  });
+}

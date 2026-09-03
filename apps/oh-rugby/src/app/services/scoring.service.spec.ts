@@ -45,6 +45,13 @@ describe('ScoringService', () => {
     expect(service.scoreMatch(makePrediction({ outcome: MatchOutcome.HOME }), match)).toBe(3);
   });
 
+  it('returns 4 for a correct draw prediction with no bonus', () => {
+    const match = makeMatch({
+      result: { outcome: MatchOutcome.DRAW, offensiveBonusAwarded: false, defensiveBonusAwarded: false },
+    });
+    expect(service.scoreMatch(makePrediction({ outcome: MatchOutcome.DRAW }), match)).toBe(4);
+  });
+
   it('adds 1 point per correctly predicted bonus, only when the outcome is correct', () => {
     const match = makeMatch({
       result: { outcome: MatchOutcome.HOME, offensiveBonusAwarded: true, defensiveBonusAwarded: true },

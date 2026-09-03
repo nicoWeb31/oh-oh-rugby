@@ -164,11 +164,12 @@ Les entités suivantes sont partagées par le frontend et l'API. En local, les d
 
 | Pronostic | Points |
 |---|---|
-| Issue correcte (domicile / nul / extérieur) | 3 pts |
+| Issue correcte (domicile / extérieur) | 3 pts |
+| Issue correcte (nul) | 4 pts |
 | Bonus offensif correctement prévu | 1 pt |
 | Bonus défensif correctement prévu | 1 pt |
 
-- Maximum par match : **5 pts**
+- Maximum par match : **6 pts** (nul + 2 bonus)
 - Un pronostic non saisi vaut **0 pt** pour ce match
 - Les bonus ne rapportent des points que si l'issue est également correcte
 

@@ -55,6 +55,13 @@ describe('scorePrediction', () => {
     expect(scorePrediction(prediction, match)).toBe(5);
   });
 
+  it('returns 4 for a correct draw prediction with no bonus', () => {
+    const match = makeMatch({
+      result: { outcome: MatchOutcome.DRAW, offensiveBonusAwarded: false, defensiveBonusAwarded: false },
+    });
+    expect(scorePrediction(makePrediction({ outcome: MatchOutcome.DRAW }), match)).toBe(4);
+  });
+
   it('does not award bonus points when the outcome prediction is wrong', () => {
     const match = makeMatch({
       result: { outcome: MatchOutcome.HOME, offensiveBonusAwarded: true, defensiveBonusAwarded: true },
@@ -75,7 +82,7 @@ describe('getMatchdayStatus', () => {
     expect(getMatchdayStatus({ ...matchday, date: '2099-01-04' })).toBe(MatchdayStatus.UPCOMING);
   });
 
-  it('is LOCKED after the Friday of match week', () => {
+  it('is LOCKED after Saturday noon of match week', () => {
     expect(getMatchdayStatus({ ...matchday, date: '2000-01-02' })).toBe(MatchdayStatus.LOCKED);
   });
 });

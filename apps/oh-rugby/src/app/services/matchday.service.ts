@@ -1,6 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { Competition, Match, Matchday, MatchdayStatus, MatchResult } from '@org/models';
+import {
+  Competition,
+  Match,
+  Matchday,
+  MatchdayStatus,
+  MatchResult,
+} from '@org/models';
 import { environment } from '../../environments/environment';
 import { RankingService } from './ranking.service';
 
@@ -16,14 +22,22 @@ export class MatchdayService {
   readonly matchdays = signal<Matchday[]>([]);
 
   load(): void {
-    this.http.get<Competition>(`${API_URL}/competitions/${COMPETITION_ID}`).subscribe({
-      next: (competition) => this.competition.set(competition),
-      error: (error) => console.error('Impossible de charger la compétition.', error),
-    });
-    this.http.get<Matchday[]>(`${API_URL}/matchdays`, { params: { competitionId: COMPETITION_ID } }).subscribe({
-      next: (matchdays) => this.matchdays.set(matchdays),
-      error: (error) => console.error('Impossible de charger les journées.', error),
-    });
+    this.http
+      .get<Competition>(`${API_URL}/competitions/${COMPETITION_ID}`)
+      .subscribe({
+        next: (competition) => this.competition.set(competition),
+        error: (error) =>
+          console.error('Impossible de charger la compétition.', error),
+      });
+    this.http
+      .get<Matchday[]>(`${API_URL}/matchdays`, {
+        params: { competitionId: COMPETITION_ID },
+      })
+      .subscribe({
+        next: (matchdays) => this.matchdays.set(matchdays),
+        error: (error) =>
+          console.error('Impossible de charger les journées.', error),
+      });
   }
 
   getAll(): Matchday[] {
@@ -50,25 +64,35 @@ export class MatchdayService {
   }
 
   getActive(): Matchday | undefined {
-    return this.matchdays().find((matchday) => this.getStatus(matchday) === MatchdayStatus.ACTIVE);
+    return this.matchdays().find(
+      (matchday) => this.getStatus(matchday) === MatchdayStatus.ACTIVE,
+    );
   }
 
-  submitResult(matchId: string, result: MatchResult, onDone?: (success: boolean) => void): void {
-    this.http.put<Match>(`${API_URL}/matches/${matchId}/result`, result).subscribe({
-      next: (updatedMatch) => {
-        this.matchdays.update((matchdays) =>
-          matchdays.map((matchday) => ({
-            ...matchday,
-            matches: matchday.matches.map((match) => (match.id === matchId ? updatedMatch : match)),
-          }))
-        );
-        this.ranking.loadGlobal();
-        onDone?.(true);
-      },
-      error: (error) => {
-        console.error('Impossible de saisir le résultat.', error);
-        onDone?.(false);
-      },
-    });
+  submitResult(
+    matchId: string,
+    result: MatchResult,
+    onDone?: (success: boolean) => void,
+  ): void {
+    this.http
+      .put<Match>(`${API_URL}/matches/${matchId}/result`, result)
+      .subscribe({
+        next: (updatedMatch) => {
+          this.matchdays.update((matchdays) =>
+            matchdays.map((matchday) => ({
+              ...matchday,
+              matches: matchday.matches.map((match) =>
+                match.id === matchId ? updatedMatch : match,
+              ),
+            })),
+          );
+          this.ranking.loadGlobal();
+          onDone?.(true);
+        },
+        error: (error) => {
+          console.error('Impossible de saisir le résultat.', error);
+          onDone?.(false);
+        },
+      });
   }
 }

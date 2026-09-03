@@ -1,5 +1,11 @@
-export const competitionKey = (id: string) => ({ PK: `COMP#${id}`, SK: 'META' });
-export const matchdayKey = (id: string) => ({ PK: `MATCHDAY#${id}`, SK: 'META' });
+export const competitionKey = (id: string) => ({
+  PK: `COMP#${id}`,
+  SK: 'META',
+});
+export const matchdayKey = (id: string) => ({
+  PK: `MATCHDAY#${id}`,
+  SK: 'META',
+});
 export const playerKey = (id: string) => ({ PK: `PLAYER#${id}`, SK: 'META' });
 export const predictionKey = (playerId: string, matchId: string) => ({
   PK: `PLAYER#${playerId}`,
@@ -8,7 +14,8 @@ export const predictionKey = (playerId: string, matchId: string) => ({
 
 // Match ids are always generated as `${matchdayId}-m${n}` (see data/matchdays.seed.ts),
 // so the matchday is derivable without a reverse index or a table scan.
-export const matchdayIdFromMatchId = (matchId: string): string => matchId.split('-m')[0];
+export const matchdayIdFromMatchId = (matchId: string): string =>
+  matchId.split('-m')[0];
 
 export type ItemKeys = { PK: string; SK: string };
 

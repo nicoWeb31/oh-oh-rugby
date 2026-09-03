@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { Match, Matchday, MatchdayStatus, MatchOutcome, Player, Prediction } from '@org/models';
-import { buildRanking, findMatch, getMatchdayStatus, scorePrediction } from './scoring';
+import {
+  Match,
+  Matchday,
+  MatchdayStatus,
+  MatchOutcome,
+  Player,
+  Prediction,
+} from '@org/models';
+import {
+  buildRanking,
+  findMatch,
+  getMatchdayStatus,
+  scorePrediction,
+} from './scoring';
 
 function makeMatch(overrides: Partial<Match> = {}): Match {
   return {
@@ -31,21 +43,37 @@ describe('scorePrediction', () => {
 
   it('returns 0 when the predicted outcome is wrong', () => {
     const match = makeMatch({
-      result: { outcome: MatchOutcome.AWAY, offensiveBonusAwarded: false, defensiveBonusAwarded: false },
+      result: {
+        outcome: MatchOutcome.AWAY,
+        offensiveBonusAwarded: false,
+        defensiveBonusAwarded: false,
+      },
     });
-    expect(scorePrediction(makePrediction({ outcome: MatchOutcome.HOME }), match)).toBe(0);
+    expect(
+      scorePrediction(makePrediction({ outcome: MatchOutcome.HOME }), match),
+    ).toBe(0);
   });
 
   it('returns 3 for a correct outcome with no bonus', () => {
     const match = makeMatch({
-      result: { outcome: MatchOutcome.HOME, offensiveBonusAwarded: false, defensiveBonusAwarded: false },
+      result: {
+        outcome: MatchOutcome.HOME,
+        offensiveBonusAwarded: false,
+        defensiveBonusAwarded: false,
+      },
     });
-    expect(scorePrediction(makePrediction({ outcome: MatchOutcome.HOME }), match)).toBe(3);
+    expect(
+      scorePrediction(makePrediction({ outcome: MatchOutcome.HOME }), match),
+    ).toBe(3);
   });
 
   it('adds 1 point per correctly predicted bonus, only when the outcome is correct', () => {
     const match = makeMatch({
-      result: { outcome: MatchOutcome.HOME, offensiveBonusAwarded: true, defensiveBonusAwarded: true },
+      result: {
+        outcome: MatchOutcome.HOME,
+        offensiveBonusAwarded: true,
+        defensiveBonusAwarded: true,
+      },
     });
     const prediction = makePrediction({
       outcome: MatchOutcome.HOME,
@@ -57,14 +85,24 @@ describe('scorePrediction', () => {
 
   it('returns 4 for a correct draw prediction with no bonus', () => {
     const match = makeMatch({
-      result: { outcome: MatchOutcome.DRAW, offensiveBonusAwarded: false, defensiveBonusAwarded: false },
+      result: {
+        outcome: MatchOutcome.DRAW,
+        offensiveBonusAwarded: false,
+        defensiveBonusAwarded: false,
+      },
     });
-    expect(scorePrediction(makePrediction({ outcome: MatchOutcome.DRAW }), match)).toBe(4);
+    expect(
+      scorePrediction(makePrediction({ outcome: MatchOutcome.DRAW }), match),
+    ).toBe(4);
   });
 
   it('does not award bonus points when the outcome prediction is wrong', () => {
     const match = makeMatch({
-      result: { outcome: MatchOutcome.HOME, offensiveBonusAwarded: true, defensiveBonusAwarded: true },
+      result: {
+        outcome: MatchOutcome.HOME,
+        offensiveBonusAwarded: true,
+        defensiveBonusAwarded: true,
+      },
     });
     const prediction = makePrediction({
       outcome: MatchOutcome.AWAY,
@@ -76,22 +114,41 @@ describe('scorePrediction', () => {
 });
 
 describe('getMatchdayStatus', () => {
-  const matchday: Matchday = { id: 'md1', label: 'J1', date: '2026-07-05', matches: [] };
+  const matchday: Matchday = {
+    id: 'md1',
+    label: 'J1',
+    date: '2026-07-05',
+    matches: [],
+  };
 
   it('is UPCOMING before the Monday of match week', () => {
-    expect(getMatchdayStatus({ ...matchday, date: '2099-01-04' })).toBe(MatchdayStatus.UPCOMING);
+    expect(getMatchdayStatus({ ...matchday, date: '2099-01-04' })).toBe(
+      MatchdayStatus.UPCOMING,
+    );
   });
 
   it('is LOCKED after Saturday noon of match week', () => {
-    expect(getMatchdayStatus({ ...matchday, date: '2000-01-02' })).toBe(MatchdayStatus.LOCKED);
+    expect(getMatchdayStatus({ ...matchday, date: '2000-01-02' })).toBe(
+      MatchdayStatus.LOCKED,
+    );
   });
 });
 
 describe('findMatch', () => {
   it('locates the matchday owning a given match id', () => {
     const matchdays: Matchday[] = [
-      { id: 'md1', label: 'J1', date: '2026-07-05', matches: [makeMatch({ id: 'md1-m1' })] },
-      { id: 'md2', label: 'J2', date: '2026-07-12', matches: [makeMatch({ id: 'md2-m1' })] },
+      {
+        id: 'md1',
+        label: 'J1',
+        date: '2026-07-05',
+        matches: [makeMatch({ id: 'md1-m1' })],
+      },
+      {
+        id: 'md2',
+        label: 'J2',
+        date: '2026-07-12',
+        matches: [makeMatch({ id: 'md2-m1' })],
+      },
     ];
     const found = findMatch(matchdays, 'md2-m1');
     expect(found?.matchday.id).toBe('md2');
@@ -117,7 +174,11 @@ describe('buildRanking', () => {
         matches: [
           makeMatch({
             id: 'md1-m1',
-            result: { outcome: MatchOutcome.HOME, offensiveBonusAwarded: false, defensiveBonusAwarded: false },
+            result: {
+              outcome: MatchOutcome.HOME,
+              offensiveBonusAwarded: false,
+              defensiveBonusAwarded: false,
+            },
           }),
         ],
       },
@@ -145,7 +206,11 @@ describe('buildRanking', () => {
         matches: [
           makeMatch({
             id: 'md1-m1',
-            result: { outcome: MatchOutcome.HOME, offensiveBonusAwarded: false, defensiveBonusAwarded: false },
+            result: {
+              outcome: MatchOutcome.HOME,
+              offensiveBonusAwarded: false,
+              defensiveBonusAwarded: false,
+            },
           }),
         ],
       },
@@ -153,6 +218,8 @@ describe('buildRanking', () => {
 
     const ranking = buildRanking(players, matchdays, new Map());
 
-    expect(ranking).toEqual([{ playerId: 'p1', displayName: 'Thomas', points: 0, rank: 1 }]);
+    expect(ranking).toEqual([
+      { playerId: 'p1', displayName: 'Thomas', points: 0, rank: 1 },
+    ]);
   });
 });

@@ -24,29 +24,41 @@ export class PlayerService {
       next: (players) => {
         this.players.set(players);
         const stored = this.readStoredAuth();
-        const player = stored && players.find((candidate) => candidate.id === stored.playerId);
+        const player =
+          stored &&
+          players.find((candidate) => candidate.id === stored.playerId);
         if (player && stored) {
           this.code = stored.code;
           this.currentPlayer.set(player);
         }
       },
-      error: (error) => console.error('Impossible de charger les joueurs.', error),
+      error: (error) =>
+        console.error('Impossible de charger les joueurs.', error),
     });
   }
 
   // Lightweight deterrent against playing as someone else, not real auth —
   // codes are static and shared by word of mouth within the group. The
   // server re-checks the code on every write that matters regardless.
-  login(playerId: string, code: string, onDone: (success: boolean) => void): void {
-    this.http.post<Player>(`${API_URL}/auth/verify`, { playerId, code }).subscribe({
-      next: (player) => {
-        this.code = code;
-        this.currentPlayer.set(player);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ playerId, code } satisfies StoredAuth));
-        onDone(true);
-      },
-      error: () => onDone(false),
-    });
+  login(
+    playerId: string,
+    code: string,
+    onDone: (success: boolean) => void,
+  ): void {
+    this.http
+      .post<Player>(`${API_URL}/auth/verify`, { playerId, code })
+      .subscribe({
+        next: (player) => {
+          this.code = code;
+          this.currentPlayer.set(player);
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ playerId, code } satisfies StoredAuth),
+          );
+          onDone(true);
+        },
+        error: () => onDone(false),
+      });
   }
 
   logout(): void {

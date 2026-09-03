@@ -1,18 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;700&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 :root {
-  --bg:     #0e0e12;
-  --bg2:    #16161d;
-  --text:   #f0ede8;
-  --gold:   #e8c84a;
-  --red:    #c0392b;
-  --muted:  #666676;
+  --bg: #0e0e12;
+  --bg2: #16161d;
+  --text: #f0ede8;
+  --gold: #e8c84a;
+  --red: #c0392b;
+  --muted: #666676;
   --border: #2a2a38;
 }
 
-html, body {
+html,
+body {
   background: var(--bg);
   color: var(--text);
   font-family: 'Barlow', 'Arial Narrow', Arial, sans-serif;
@@ -21,7 +28,10 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
   font-weight: 900;
   text-transform: uppercase;
@@ -49,7 +59,9 @@ button {
   text-transform: uppercase;
   transition: opacity 0.15s;
 }
-.btn-primary:hover { opacity: 0.85; }
+.btn-primary:hover {
+  opacity: 0.85;
+}
 
 .btn-secondary {
   display: inline-block;
@@ -65,8 +77,18 @@ button {
   text-transform: uppercase;
   transition: all 0.15s;
 }
-.btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+.btn-secondary:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+}

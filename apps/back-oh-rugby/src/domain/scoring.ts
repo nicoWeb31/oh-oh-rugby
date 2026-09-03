@@ -1,4 +1,12 @@
-import { Match, Matchday, MatchdayStatus, MatchOutcome, Player, Prediction, RankingEntry } from '@org/models';
+import {
+  Match,
+  Matchday,
+  MatchdayStatus,
+  MatchOutcome,
+  Player,
+  Prediction,
+  RankingEntry,
+} from '@org/models';
 
 export function getMatchdayStatus(matchday: Matchday): MatchdayStatus {
   const now = new Date();
@@ -17,10 +25,12 @@ export function getMatchdayStatus(matchday: Matchday): MatchdayStatus {
 
 export function findMatch(
   matchdays: Matchday[],
-  matchId: string
+  matchId: string,
 ): { matchday: Matchday; match: Match } | undefined {
   for (const matchday of matchdays) {
-    const match = matchday.matches.find((candidate) => candidate.id === matchId);
+    const match = matchday.matches.find(
+      (candidate) => candidate.id === matchId,
+    );
     if (match) return { matchday, match };
   }
   return undefined;
@@ -32,15 +42,19 @@ export function scorePrediction(prediction: Prediction, match: Match): number {
   const outcomePoints = match.result.outcome === MatchOutcome.DRAW ? 4 : 3;
   return (
     outcomePoints +
-    Number(prediction.offensiveBonusPredicted && match.result.offensiveBonusAwarded) +
-    Number(prediction.defensiveBonusPredicted && match.result.defensiveBonusAwarded)
+    Number(
+      prediction.offensiveBonusPredicted && match.result.offensiveBonusAwarded,
+    ) +
+    Number(
+      prediction.defensiveBonusPredicted && match.result.defensiveBonusAwarded,
+    )
   );
 }
 
 export function buildRanking(
   players: Player[],
   matchdaysToScore: Matchday[],
-  predictionsByPlayer: Map<string, Prediction[]>
+  predictionsByPlayer: Map<string, Prediction[]>,
 ): RankingEntry[] {
   return players
     .map((player) => {
@@ -49,13 +63,23 @@ export function buildRanking(
         return (
           total +
           matchday.matches.reduce((matchdayTotal, match) => {
-            const prediction = predictions.find((candidate) => candidate.matchId === match.id);
-            return matchdayTotal + (prediction ? scorePrediction(prediction, match) : 0);
+            const prediction = predictions.find(
+              (candidate) => candidate.matchId === match.id,
+            );
+            return (
+              matchdayTotal +
+              (prediction ? scorePrediction(prediction, match) : 0)
+            );
           }, 0)
         );
       }, 0);
 
-      return { playerId: player.id, displayName: player.displayName, points, rank: 0 };
+      return {
+        playerId: player.id,
+        displayName: player.displayName,
+        points,
+        rank: 0,
+      };
     })
     .sort((first, second) => second.points - first.points)
     .map((entry, index) => ({ ...entry, rank: index + 1 }));

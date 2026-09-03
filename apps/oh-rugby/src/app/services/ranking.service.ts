@@ -13,19 +13,34 @@ export class RankingService {
   private readonly byMatchday = signal<Record<string, RankingEntry[]>>({});
 
   loadGlobal(): void {
-    this.http.get<RankingEntry[]>(`${API_URL}/ranking`, { params: { competitionId: COMPETITION_ID } }).subscribe({
-      next: (ranking) => this.global.set(ranking),
-      error: (error) => console.error('Impossible de charger le classement.', error),
-    });
+    this.http
+      .get<RankingEntry[]>(`${API_URL}/ranking`, {
+        params: { competitionId: COMPETITION_ID },
+      })
+      .subscribe({
+        next: (ranking) => this.global.set(ranking),
+        error: (error) =>
+          console.error('Impossible de charger le classement.', error),
+      });
   }
 
   loadForMatchday(matchdayId: string): void {
-    this.http.get<RankingEntry[]>(`${API_URL}/ranking`, {
-      params: { competitionId: COMPETITION_ID, matchdayId },
-    }).subscribe({
-      next: (ranking) => this.byMatchday.update((rankings) => ({ ...rankings, [matchdayId]: ranking })),
-      error: (error) => console.error('Impossible de charger le classement de la journée.', error),
-    });
+    this.http
+      .get<RankingEntry[]>(`${API_URL}/ranking`, {
+        params: { competitionId: COMPETITION_ID, matchdayId },
+      })
+      .subscribe({
+        next: (ranking) =>
+          this.byMatchday.update((rankings) => ({
+            ...rankings,
+            [matchdayId]: ranking,
+          })),
+        error: (error) =>
+          console.error(
+            'Impossible de charger le classement de la journée.',
+            error,
+          ),
+      });
   }
 
   getGlobal(): RankingEntry[] {

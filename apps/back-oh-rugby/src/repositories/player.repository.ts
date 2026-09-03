@@ -20,20 +20,27 @@ export async function listPlayers(): Promise<Player[]> {
       TableName: TABLE_NAME,
       FilterExpression: 'entityType = :type',
       ExpressionAttributeValues: { ':type': 'PLAYER' },
-    })
+    }),
   );
   return (result.Items ?? []).map(toPublicPlayer);
 }
 
 export async function getPlayer(id: string): Promise<Player | undefined> {
-  const result = await ddb.send(new GetCommand({ TableName: TABLE_NAME, Key: playerKey(id) }));
+  const result = await ddb.send(
+    new GetCommand({ TableName: TABLE_NAME, Key: playerKey(id) }),
+  );
   return result.Item ? toPublicPlayer(result.Item) : undefined;
 }
 
 // Lightweight deterrent against playing as someone else, not real auth:
 // codes are static and shared by word of mouth within the friends group.
-export async function verifyCode(playerId: string, code: string): Promise<boolean> {
-  const result = await ddb.send(new GetCommand({ TableName: TABLE_NAME, Key: playerKey(playerId) }));
+export async function verifyCode(
+  playerId: string,
+  code: string,
+): Promise<boolean> {
+  const result = await ddb.send(
+    new GetCommand({ TableName: TABLE_NAME, Key: playerKey(playerId) }),
+  );
   return typeof result.Item?.code === 'string' && result.Item.code === code;
 }
 
@@ -42,6 +49,6 @@ export async function putPlayer(player: Player): Promise<void> {
     new PutCommand({
       TableName: TABLE_NAME,
       Item: { ...playerKey(player.id), entityType: 'PLAYER', ...player },
-    })
+    }),
   );
 }

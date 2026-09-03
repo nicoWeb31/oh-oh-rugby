@@ -14,7 +14,9 @@ function requireString(value: unknown): string | undefined {
 
 export function createApp() {
   const app = express();
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map((origin) => origin.trim());
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map((origin) =>
+    origin.trim(),
+  );
 
   app.use(express.json());
   app.use(cors({ origin: allowedOrigins?.length ? allowedOrigins : true }));
@@ -25,7 +27,9 @@ export function createApp() {
 
   app.get('/api/competitions/:id', async (req, res, next) => {
     try {
-      const competition = await competitionRepository.getCompetition(req.params.id);
+      const competition = await competitionRepository.getCompetition(
+        req.params.id,
+      );
       if (!competition) {
         res.status(404).json({ message: 'Competition introuvable.' });
         return;
@@ -38,17 +42,25 @@ export function createApp() {
 
   app.get('/api/matchdays', async (req, res, next) => {
     try {
-      const competitionId = typeof req.query.competitionId === 'string' ? req.query.competitionId : undefined;
+      const competitionId =
+        typeof req.query.competitionId === 'string'
+          ? req.query.competitionId
+          : undefined;
       if (!competitionId) {
-        res.status(400).json({ message: 'Le paramètre competitionId est requis.' });
+        res
+          .status(400)
+          .json({ message: 'Le paramètre competitionId est requis.' });
         return;
       }
-      const competition = await competitionRepository.getCompetition(competitionId);
+      const competition =
+        await competitionRepository.getCompetition(competitionId);
       if (!competition) {
         res.status(404).json({ message: 'Competition introuvable.' });
         return;
       }
-      res.json(await matchdayRepository.getMatchdaysByIds(competition.matchdayIds));
+      res.json(
+        await matchdayRepository.getMatchdaysByIds(competition.matchdayIds),
+      );
     } catch (error) {
       next(error);
     }
@@ -100,8 +112,12 @@ export function createApp() {
 
   app.get('/api/predictions', async (req, res, next) => {
     try {
-      const playerId = typeof req.query.playerId === 'string' ? req.query.playerId : undefined;
-      const matchdayId = typeof req.query.matchdayId === 'string' ? req.query.matchdayId : undefined;
+      const playerId =
+        typeof req.query.playerId === 'string' ? req.query.playerId : undefined;
+      const matchdayId =
+        typeof req.query.matchdayId === 'string'
+          ? req.query.matchdayId
+          : undefined;
 
       if (!playerId) {
         res.status(400).json({ message: 'Le paramètre playerId est requis.' });
@@ -112,7 +128,8 @@ export function createApp() {
         return;
       }
 
-      let predictions = await predictionRepository.getPredictionsByPlayer(playerId);
+      let predictions =
+        await predictionRepository.getPredictionsByPlayer(playerId);
       if (matchdayId) {
         const matchday = await matchdayRepository.getMatchdayById(matchdayId);
         if (!matchday) {
@@ -120,7 +137,9 @@ export function createApp() {
           return;
         }
         const matchIds = new Set(matchday.matches.map((match) => match.id));
-        predictions = predictions.filter((prediction) => matchIds.has(prediction.matchId));
+        predictions = predictions.filter((prediction) =>
+          matchIds.has(prediction.matchId),
+        );
       }
       res.json(predictions);
     } catch (error) {
@@ -145,8 +164,12 @@ export function createApp() {
         return;
       }
 
-      const matchday = await matchdayRepository.getMatchdayById(matchdayIdFromMatchId(req.params.matchId));
-      const match = matchday?.matches.find((candidate) => candidate.id === req.params.matchId);
+      const matchday = await matchdayRepository.getMatchdayById(
+        matchdayIdFromMatchId(req.params.matchId),
+      );
+      const match = matchday?.matches.find(
+        (candidate) => candidate.id === req.params.matchId,
+      );
       if (!matchday || !match) {
         res.status(404).json({ message: 'Match introuvable.' });
         return;
@@ -155,12 +178,19 @@ export function createApp() {
         res.status(400).json({ message: 'Le pronostic est invalide.' });
         return;
       }
-      if (typeof offensiveBonusPredicted !== 'boolean' || typeof defensiveBonusPredicted !== 'boolean') {
-        res.status(400).json({ message: 'Les bonus doivent être des booléens.' });
+      if (
+        typeof offensiveBonusPredicted !== 'boolean' ||
+        typeof defensiveBonusPredicted !== 'boolean'
+      ) {
+        res
+          .status(400)
+          .json({ message: 'Les bonus doivent être des booléens.' });
         return;
       }
       if (getMatchdayStatus(matchday) !== MatchdayStatus.ACTIVE) {
-        res.status(409).json({ message: 'Les pronostics sont verrouillés pour cette journée.' });
+        res.status(409).json({
+          message: 'Les pronostics sont verrouillés pour cette journée.',
+        });
         return;
       }
 
@@ -191,13 +221,22 @@ export function createApp() {
         res.status(400).json({ message: 'Le résultat est invalide.' });
         return;
       }
-      if (typeof offensiveBonusAwarded !== 'boolean' || typeof defensiveBonusAwarded !== 'boolean') {
-        res.status(400).json({ message: 'Les bonus doivent être des booléens.' });
+      if (
+        typeof offensiveBonusAwarded !== 'boolean' ||
+        typeof defensiveBonusAwarded !== 'boolean'
+      ) {
+        res
+          .status(400)
+          .json({ message: 'Les bonus doivent être des booléens.' });
         return;
       }
 
-      const matchday = await matchdayRepository.getMatchdayById(matchdayIdFromMatchId(req.params.matchId));
-      const match = matchday?.matches.find((candidate) => candidate.id === req.params.matchId);
+      const matchday = await matchdayRepository.getMatchdayById(
+        matchdayIdFromMatchId(req.params.matchId),
+      );
+      const match = matchday?.matches.find(
+        (candidate) => candidate.id === req.params.matchId,
+      );
       if (!matchday || !match) {
         res.status(404).json({ message: 'Match introuvable.' });
         return;
@@ -213,23 +252,36 @@ export function createApp() {
 
   app.get('/api/ranking', async (req, res, next) => {
     try {
-      const competitionId = typeof req.query.competitionId === 'string' ? req.query.competitionId : undefined;
-      const matchdayId = typeof req.query.matchdayId === 'string' ? req.query.matchdayId : undefined;
+      const competitionId =
+        typeof req.query.competitionId === 'string'
+          ? req.query.competitionId
+          : undefined;
+      const matchdayId =
+        typeof req.query.matchdayId === 'string'
+          ? req.query.matchdayId
+          : undefined;
 
       if (!competitionId) {
-        res.status(400).json({ message: 'Le paramètre competitionId est requis.' });
+        res
+          .status(400)
+          .json({ message: 'Le paramètre competitionId est requis.' });
         return;
       }
-      const competition = await competitionRepository.getCompetition(competitionId);
+      const competition =
+        await competitionRepository.getCompetition(competitionId);
       if (!competition) {
         res.status(404).json({ message: 'Competition introuvable.' });
         return;
       }
 
       const players = await playerRepository.listPlayers();
-      let matchdaysToScore = await matchdayRepository.getMatchdaysByIds(competition.matchdayIds);
+      let matchdaysToScore = await matchdayRepository.getMatchdaysByIds(
+        competition.matchdayIds,
+      );
       if (matchdayId) {
-        const matchday = matchdaysToScore.find((candidate) => candidate.id === matchdayId);
+        const matchday = matchdaysToScore.find(
+          (candidate) => candidate.id === matchdayId,
+        );
         if (!matchday) {
           res.status(404).json({ message: 'Journée introuvable.' });
           return;
@@ -240,9 +292,13 @@ export function createApp() {
       const predictionsByPlayer = new Map(
         await Promise.all(
           players.map(
-            async (player) => [player.id, await predictionRepository.getPredictionsByPlayer(player.id)] as const
-          )
-        )
+            async (player) =>
+              [
+                player.id,
+                await predictionRepository.getPredictionsByPlayer(player.id),
+              ] as const,
+          ),
+        ),
       );
       res.json(buildRanking(players, matchdaysToScore, predictionsByPlayer));
     } catch (error) {
@@ -252,11 +308,13 @@ export function createApp() {
 
   // Express identifies error-handling middleware by its 4-arg arity, so `next`
   // must stay in the signature even though it's never called here.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    console.error(error);
-    res.status(500).json({ message: 'Une erreur interne est survenue.' });
-  });
+  app.use(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+      console.error(error);
+      res.status(500).json({ message: 'Une erreur interne est survenue.' });
+    },
+  );
 
   return app;
 }

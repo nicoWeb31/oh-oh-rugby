@@ -162,12 +162,12 @@ Les entités suivantes sont partagées par le frontend et l'API. En local, les d
 
 ## Barème de Scoring des Pronostics
 
-| Pronostic | Points |
-|---|---|
-| Issue correcte (domicile / extérieur) | 3 pts |
-| Issue correcte (nul) | 4 pts |
-| Bonus offensif correctement prévu | 1 pt |
-| Bonus défensif correctement prévu | 1 pt |
+| Pronostic                             | Points |
+| ------------------------------------- | ------ |
+| Issue correcte (domicile / extérieur) | 3 pts  |
+| Issue correcte (nul)                  | 4 pts  |
+| Bonus offensif correctement prévu     | 1 pt   |
+| Bonus défensif correctement prévu     | 1 pt   |
 
 - Maximum par match : **6 pts** (nul + 2 bonus)
 - Un pronostic non saisi vaut **0 pt** pour ce match
@@ -220,14 +220,14 @@ Les entités suivantes sont partagées par le frontend et l'API. En local, les d
 
 ### Décisions confirmées
 
-| Sujet | Décision |
-| --- | --- |
-| API | REST, servie par Express |
-| Exécution | AWS Lambda derrière API Gateway HTTP API (v2) |
-| Persistance | DynamoDB, une table par environnement |
-| Infrastructure | Terraform |
-| Région cible | `eu-west-3` (Paris) |
-| Environnements | `dev` et `prod` |
+| Sujet          | Décision                                      |
+| -------------- | --------------------------------------------- |
+| API            | REST, servie par Express                      |
+| Exécution      | AWS Lambda derrière API Gateway HTTP API (v2) |
+| Persistance    | DynamoDB, une table par environnement         |
+| Infrastructure | Terraform                                     |
+| Région cible   | `eu-west-3` (Paris)                           |
+| Environnements | `dev` et `prod`                               |
 
 La cible AWS est une API sans état : elle ne conserve aucune session en mémoire entre deux invocations Lambda et persiste les données dans DynamoDB. L'implémentation locale actuelle conserve seulement les données de démonstration en mémoire de processus ; elle est donc temporaire et non durable. Les règles métier, notamment le verrouillage d'une journée et le calcul des points, sont appliquées côté serveur afin de ne pas dépendre du client Angular.
 
@@ -254,13 +254,13 @@ La cible AWS est une API sans état : elle ne conserve aucune session en mémoir
 
 #### Dépendances et exécution locale
 
-| Dépendance | Rôle |
-| --- | --- |
-| `express` | Routes et middlewares de l'API |
-| `serverless-http` | Adaptation de l'application Express en handler Lambda |
-| `@aws-sdk/client-dynamodb` | Client DynamoDB AWS SDK v3 |
-| `@aws-sdk/lib-dynamodb` | Commandes DynamoDB de haut niveau (`DocumentClient`) |
-| `cors` | Gestion de la liste blanche des origines HTTP |
+| Dépendance                 | Rôle                                                  |
+| -------------------------- | ----------------------------------------------------- |
+| `express`                  | Routes et middlewares de l'API                        |
+| `serverless-http`          | Adaptation de l'application Express en handler Lambda |
+| `@aws-sdk/client-dynamodb` | Client DynamoDB AWS SDK v3                            |
+| `@aws-sdk/lib-dynamodb`    | Commandes DynamoDB de haut niveau (`DocumentClient`)  |
+| `cors`                     | Gestion de la liste blanche des origines HTTP         |
 
 Le développement local utilise le serveur Express standard ; aucun émulateur Lambda n'est requis pour démarrer l'API :
 
@@ -282,31 +282,31 @@ En développement, les données de démonstration (compétition, 26 journées, j
 
 #### Endpoints actuellement disponibles
 
-| Méthode | Route | Usage |
-| --- | --- | --- |
-| `GET` | `/api/health` | Vérifier que l'API est disponible |
-| `GET` | `/api/competitions/:id` | Lire la compétition |
-| `GET` | `/api/matchdays?competitionId=` | Lister les journées et leurs matchs |
-| `GET` | `/api/matchdays/:id` | Lire une journée |
-| `GET` | `/api/players` | Lister les joueurs |
-| `GET` | `/api/predictions?playerId=&matchdayId=` | Lire les pronostics d'un joueur |
-| `PUT` | `/api/predictions/:matchId` | Créer ou modifier un pronostic actif |
-| `GET` | `/api/ranking?competitionId=&matchdayId=` | Lire le classement global ou d'une journée |
+| Méthode | Route                                     | Usage                                      |
+| ------- | ----------------------------------------- | ------------------------------------------ |
+| `GET`   | `/api/health`                             | Vérifier que l'API est disponible          |
+| `GET`   | `/api/competitions/:id`                   | Lire la compétition                        |
+| `GET`   | `/api/matchdays?competitionId=`           | Lister les journées et leurs matchs        |
+| `GET`   | `/api/matchdays/:id`                      | Lire une journée                           |
+| `GET`   | `/api/players`                            | Lister les joueurs                         |
+| `GET`   | `/api/predictions?playerId=&matchdayId=`  | Lire les pronostics d'un joueur            |
+| `PUT`   | `/api/predictions/:matchId`               | Créer ou modifier un pronostic actif       |
+| `GET`   | `/api/ranking?competitionId=&matchdayId=` | Lire le classement global ou d'une journée |
 
 ### Base de données — DynamoDB
 
 - Table principale : `oh-rugby-{env}` (single-table design)
 - Clé de partition (`PK`) et clé de tri (`SK`) selon le pattern suivant. Chaque item porte aussi un attribut `entityType` et les dates sont enregistrées en ISO 8601 UTC.
 
-| Entité | PK | SK |
-|---|---|---|
-| Competition | `COMP#{id}` | `META` |
-| Matchday | `COMP#{compId}` | `MATCHDAY#{id}` |
-| Match | `MATCHDAY#{matchdayId}` | `MATCH#{id}` |
-| Player | `PLAYER#{id}` | `META` |
-| Prediction | `PLAYER#{playerId}` | `PRED#MATCH#{matchId}` |
-| RankingEntry global | `COMP#{compId}#RANK#GLOBAL` | `PLAYER#{playerId}` |
-| RankingEntry par journée | `COMP#{compId}#RANK#MATCHDAY#{matchdayId}` | `PLAYER#{playerId}` |
+| Entité                   | PK                                         | SK                     |
+| ------------------------ | ------------------------------------------ | ---------------------- |
+| Competition              | `COMP#{id}`                                | `META`                 |
+| Matchday                 | `COMP#{compId}`                            | `MATCHDAY#{id}`        |
+| Match                    | `MATCHDAY#{matchdayId}`                    | `MATCH#{id}`           |
+| Player                   | `PLAYER#{id}`                              | `META`                 |
+| Prediction               | `PLAYER#{playerId}`                        | `PRED#MATCH#{matchId}` |
+| RankingEntry global      | `COMP#{compId}#RANK#GLOBAL`                | `PLAYER#{playerId}`    |
+| RankingEntry par journée | `COMP#{compId}#RANK#MATCHDAY#{matchdayId}` | `PLAYER#{playerId}`    |
 
 - Index secondaire global (GSI) `MatchdayIndex` : `GSI1PK = MATCHDAY#{matchdayId}`, `GSI1SK = MATCH#{matchId}` pour récupérer tous les matchs d'une journée.
 - Index secondaire global (GSI) `MatchPredictionsIndex` : `GSI2PK = MATCH#{matchId}`, `GSI2SK = PLAYER#{playerId}` pour récupérer tous les pronostics d'un match.
@@ -317,13 +317,13 @@ En développement, les données de démonstration (compétition, 26 journées, j
 
 #### Accès attendus en V1
 
-| Besoin | Accès DynamoDB prévu |
-| --- | --- |
-| Lire une compétition et ses journées | `Query` sur `PK = COMP#{competitionId}` |
-| Lire les matchs d'une journée | `Query` sur `MatchdayIndex` |
-| Lire les pronostics d'un match | `Query` sur `MatchPredictionsIndex` |
-| Lire les pronostics d'un joueur pour une journée | À décider avant le développement du repository |
-| Lire un classement global ou par journée | `Query` sur la partition de classement concernée |
+| Besoin                                           | Accès DynamoDB prévu                             |
+| ------------------------------------------------ | ------------------------------------------------ |
+| Lire une compétition et ses journées             | `Query` sur `PK = COMP#{competitionId}`          |
+| Lire les matchs d'une journée                    | `Query` sur `MatchdayIndex`                      |
+| Lire les pronostics d'un match                   | `Query` sur `MatchPredictionsIndex`              |
+| Lire les pronostics d'un joueur pour une journée | À décider avant le développement du repository   |
+| Lire un classement global ou par journée         | `Query` sur la partition de classement concernée |
 
 ### Infrastructure
 
@@ -342,34 +342,34 @@ En développement, les données de démonstration (compétition, 26 journées, j
 
 ## Calendrier des Matchs
 
-| Journée | Date | Matchs |
-| ------- | ---- | ------ |
-| J1 | 5 septembre | Bayonne – Toulon • Bordeaux-Bègles – Racing 92 • Castres – Vannes • La Rochelle – Toulouse • Lyon – Clermont • Montpellier – Pau • Stade français – Perpignan |
-| J2 | 12 septembre | Perpignan – Castres • Vannes – Montpellier • Clermont – Stade français • Pau – Bayonne • Racing 92 – Lyon • Toulon – La Rochelle • Toulouse – Bordeaux-Bègles |
-| J3 | 19 septembre | Bayonne – Clermont • Bordeaux-Bègles – Stade français • Vannes – Toulouse • Castres – Toulon • La Rochelle – Racing 92 • Lyon – Pau • Montpellier – Perpignan |
-| J4 | 26 septembre | Perpignan – Bordeaux-Bègles • Clermont – Castres • Stade français – Lyon • Pau – La Rochelle • Racing 92 – Bayonne • Toulon – Vannes • Toulouse – Montpellier |
-| J5 | 3 octobre | Bayonne – Stade français • Bordeaux-Bègles – Lyon • Vannes – Pau • Castres – Toulouse • La Rochelle – Clermont • Montpellier – Toulon • Racing 92 – Perpignan |
-| J6 | 10 octobre | Perpignan – Vannes • Clermont – Bordeaux-Bègles • Lyon – La Rochelle • Stade français – Montpellier • Pau – Castres • Toulon – Racing 92 • Toulouse – Bayonne |
-| J7 | 24 octobre | Bayonne – Lyon • Vannes – Clermont • Castres – Stade français • La Rochelle – Bordeaux-Bègles • Racing 92 – Montpellier • Toulon – Pau • Toulouse – Perpignan |
-| J8 | 31 octobre | Perpignan – Toulon • Bordeaux-Bègles – Bayonne • Clermont – Racing 92 • Lyon – Vannes • Montpellier – Castres • Stade français – La Rochelle • Pau – Toulouse |
-| J9 | 7 novembre | Vannes – Bordeaux-Bègles • Castres – Racing 92 • La Rochelle – Bayonne • Montpellier – Lyon • Pau – Perpignan • Toulon – Stade français • Toulouse – Clermont |
-| J10 | 28 novembre | Bayonne – Castres • Bordeaux-Bègles – Montpellier • Clermont – Toulon • La Rochelle – Perpignan • Lyon – Toulouse • Stade français – Vannes • Racing 92 – Pau |
-| J11 | 5 décembre | Perpignan – Clermont • Vannes – Bayonne • Castres – Lyon • Montpellier – La Rochelle • Pau – Stade français • Toulon – Bordeaux-Bègles • Toulouse – Racing 92 |
-| J12 | 19 décembre | Bayonne – Perpignan • Bordeaux-Bègles – Pau • Clermont – Montpellier • La Rochelle – Castres • Lyon – Toulon • Stade français – Toulouse • Racing 92 – Vannes |
-| J13 | 26 décembre | Perpignan – Lyon • Vannes – La Rochelle • Castres – Bordeaux-Bègles • Montpellier – Bayonne • Pau – Clermont • Racing 92 – Stade français • Toulouse – Toulon |
-| J14 | 2 janvier | Bayonne – Toulouse • Bordeaux-Bègles – Perpignan • Clermont – Vannes • La Rochelle – Pau • Lyon – Racing 92 • Stade français – Castres • Toulon – Montpellier |
-| J15 | 23 janvier | Vannes – Perpignan • Castres – Clermont • Montpellier – Stade français • Pau – Lyon • Racing 92 – Bordeaux-Bègles • Toulon – Bayonne • Toulouse – La Rochelle |
-| J16 | 30 janvier | Perpignan – Stade français • Bordeaux-Bègles – Vannes • Clermont – Toulouse • La Rochelle – Toulon • Lyon – Bayonne • Pau – Montpellier • Racing 92 – Castres |
-| J17 | 20 février | Bayonne – La Rochelle • Perpignan – Pau • Vannes – Castres • Montpellier – Racing 92 • Stade français – Bordeaux-Bègles • Toulon – Clermont • Toulouse – Lyon |
-| J18 | 27 février | Bordeaux-Bègles – Toulon • Castres – Perpignan • Clermont – Bayonne • La Rochelle – Stade français • Lyon – Montpellier • Pau – Vannes • Racing 92 – Toulouse |
-| J19 | 20 mars | Bayonne – Bordeaux-Bègles • Perpignan – Racing 92 • Castres – La Rochelle • Montpellier – Clermont • Stade français – Pau • Toulon – Lyon • Toulouse – Vannes |
-| J20 | 27 mars | Bayonne – Montpellier • Perpignan – La Rochelle • Bordeaux-Bègles – Toulouse • Vannes – Stade français • Clermont – Pau • Lyon – Castres • Racing 92 – Toulon |
-| J21 | 17 avril | Castres – Bayonne • La Rochelle – Vannes • Lyon – Perpignan • Montpellier – Bordeaux-Bègles • Stade français – Clermont • Pau – Racing 92 • Toulon – Toulouse |
-| J22 | 24 avril | Bayonne – Pau • Perpignan – Montpellier • Bordeaux-Bègles – La Rochelle • Vannes – Toulon • Clermont – Lyon • Stade français – Racing 92 • Toulouse – Castres |
-| J23 | 8 mai | Bayonne – Vannes • Clermont – Perpignan • Lyon – Stade français • Montpellier – Toulouse • Pau – Bordeaux-Bègles • Racing 92 – La Rochelle • Toulon – Castres |
-| J24 | 15 mai | Perpignan – Bayonne • Bordeaux-Bègles – Clermont • Vannes – Racing 92 • Castres – Montpellier • La Rochelle – Lyon • Stade français – Toulon • Toulouse – Pau |
-| J25 | 29 mai | Bayonne – Racing 92 • Castres – Pau • Clermont – La Rochelle • Lyon – Bordeaux-Bègles • Montpellier – Vannes • Toulon – Perpignan • Toulouse – Stade français |
-| J26 | 5 juin | Perpignan – Toulouse • Bordeaux-Bègles – Castres • Vannes – Lyon • La Rochelle – Montpellier • Stade français – Bayonne • Pau – Toulon • Racing 92 – Clermont |
+| Journée | Date         | Matchs                                                                                                                                                        |
+| ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| J1      | 5 septembre  | Bayonne – Toulon • Bordeaux-Bègles – Racing 92 • Castres – Vannes • La Rochelle – Toulouse • Lyon – Clermont • Montpellier – Pau • Stade français – Perpignan |
+| J2      | 12 septembre | Perpignan – Castres • Vannes – Montpellier • Clermont – Stade français • Pau – Bayonne • Racing 92 – Lyon • Toulon – La Rochelle • Toulouse – Bordeaux-Bègles |
+| J3      | 19 septembre | Bayonne – Clermont • Bordeaux-Bègles – Stade français • Vannes – Toulouse • Castres – Toulon • La Rochelle – Racing 92 • Lyon – Pau • Montpellier – Perpignan |
+| J4      | 26 septembre | Perpignan – Bordeaux-Bègles • Clermont – Castres • Stade français – Lyon • Pau – La Rochelle • Racing 92 – Bayonne • Toulon – Vannes • Toulouse – Montpellier |
+| J5      | 3 octobre    | Bayonne – Stade français • Bordeaux-Bègles – Lyon • Vannes – Pau • Castres – Toulouse • La Rochelle – Clermont • Montpellier – Toulon • Racing 92 – Perpignan |
+| J6      | 10 octobre   | Perpignan – Vannes • Clermont – Bordeaux-Bègles • Lyon – La Rochelle • Stade français – Montpellier • Pau – Castres • Toulon – Racing 92 • Toulouse – Bayonne |
+| J7      | 24 octobre   | Bayonne – Lyon • Vannes – Clermont • Castres – Stade français • La Rochelle – Bordeaux-Bègles • Racing 92 – Montpellier • Toulon – Pau • Toulouse – Perpignan |
+| J8      | 31 octobre   | Perpignan – Toulon • Bordeaux-Bègles – Bayonne • Clermont – Racing 92 • Lyon – Vannes • Montpellier – Castres • Stade français – La Rochelle • Pau – Toulouse |
+| J9      | 7 novembre   | Vannes – Bordeaux-Bègles • Castres – Racing 92 • La Rochelle – Bayonne • Montpellier – Lyon • Pau – Perpignan • Toulon – Stade français • Toulouse – Clermont |
+| J10     | 28 novembre  | Bayonne – Castres • Bordeaux-Bègles – Montpellier • Clermont – Toulon • La Rochelle – Perpignan • Lyon – Toulouse • Stade français – Vannes • Racing 92 – Pau |
+| J11     | 5 décembre   | Perpignan – Clermont • Vannes – Bayonne • Castres – Lyon • Montpellier – La Rochelle • Pau – Stade français • Toulon – Bordeaux-Bègles • Toulouse – Racing 92 |
+| J12     | 19 décembre  | Bayonne – Perpignan • Bordeaux-Bègles – Pau • Clermont – Montpellier • La Rochelle – Castres • Lyon – Toulon • Stade français – Toulouse • Racing 92 – Vannes |
+| J13     | 26 décembre  | Perpignan – Lyon • Vannes – La Rochelle • Castres – Bordeaux-Bègles • Montpellier – Bayonne • Pau – Clermont • Racing 92 – Stade français • Toulouse – Toulon |
+| J14     | 2 janvier    | Bayonne – Toulouse • Bordeaux-Bègles – Perpignan • Clermont – Vannes • La Rochelle – Pau • Lyon – Racing 92 • Stade français – Castres • Toulon – Montpellier |
+| J15     | 23 janvier   | Vannes – Perpignan • Castres – Clermont • Montpellier – Stade français • Pau – Lyon • Racing 92 – Bordeaux-Bègles • Toulon – Bayonne • Toulouse – La Rochelle |
+| J16     | 30 janvier   | Perpignan – Stade français • Bordeaux-Bègles – Vannes • Clermont – Toulouse • La Rochelle – Toulon • Lyon – Bayonne • Pau – Montpellier • Racing 92 – Castres |
+| J17     | 20 février   | Bayonne – La Rochelle • Perpignan – Pau • Vannes – Castres • Montpellier – Racing 92 • Stade français – Bordeaux-Bègles • Toulon – Clermont • Toulouse – Lyon |
+| J18     | 27 février   | Bordeaux-Bègles – Toulon • Castres – Perpignan • Clermont – Bayonne • La Rochelle – Stade français • Lyon – Montpellier • Pau – Vannes • Racing 92 – Toulouse |
+| J19     | 20 mars      | Bayonne – Bordeaux-Bègles • Perpignan – Racing 92 • Castres – La Rochelle • Montpellier – Clermont • Stade français – Pau • Toulon – Lyon • Toulouse – Vannes |
+| J20     | 27 mars      | Bayonne – Montpellier • Perpignan – La Rochelle • Bordeaux-Bègles – Toulouse • Vannes – Stade français • Clermont – Pau • Lyon – Castres • Racing 92 – Toulon |
+| J21     | 17 avril     | Castres – Bayonne • La Rochelle – Vannes • Lyon – Perpignan • Montpellier – Bordeaux-Bègles • Stade français – Clermont • Pau – Racing 92 • Toulon – Toulouse |
+| J22     | 24 avril     | Bayonne – Pau • Perpignan – Montpellier • Bordeaux-Bègles – La Rochelle • Vannes – Toulon • Clermont – Lyon • Stade français – Racing 92 • Toulouse – Castres |
+| J23     | 8 mai        | Bayonne – Vannes • Clermont – Perpignan • Lyon – Stade français • Montpellier – Toulouse • Pau – Bordeaux-Bègles • Racing 92 – La Rochelle • Toulon – Castres |
+| J24     | 15 mai       | Perpignan – Bayonne • Bordeaux-Bègles – Clermont • Vannes – Racing 92 • Castres – Montpellier • La Rochelle – Lyon • Stade français – Toulon • Toulouse – Pau |
+| J25     | 29 mai       | Bayonne – Racing 92 • Castres – Pau • Clermont – La Rochelle • Lyon – Bordeaux-Bègles • Montpellier – Vannes • Toulon – Perpignan • Toulouse – Stade français |
+| J26     | 5 juin       | Perpignan – Toulouse • Bordeaux-Bègles – Castres • Vannes – Lyon • La Rochelle – Montpellier • Stade français – Bayonne • Pau – Toulon • Racing 92 – Clermont |
 
 ## Décision de Départ Recommandée
 

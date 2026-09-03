@@ -9,6 +9,7 @@ export const authGuard: CanActivateFn = () => {
   const playerService = inject(PlayerService);
   const router = inject(Router);
 
-  if (playerService.hasStoredAuth() || playerService.currentPlayer()) return true;
+  if (playerService.hasStoredAuth() || playerService.currentPlayer())
+    return true;
   return router.parseUrl('/login');
 };

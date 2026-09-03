@@ -50,6 +50,7 @@ terraform output -raw deploy_user_prod_secret_access_key; echo
 ```
 
 Remplacez ensuite `REPLACE_WITH_AWS_ACCOUNT_ID` par votre account id AWS dans :
+
 - `infra/terraform/envs/dev.tfvars`, `envs/prod.tfvars`
 - `infra/terraform/envs/dev.backend.hcl`, `envs/prod.backend.hcl`
 
@@ -59,12 +60,12 @@ Créez deux [environnements GitHub](../../settings/environments) `dev` et
 `prod` sur le repo, et dans chacun ajoutez deux **secrets** (ce sont de vraies
 clés d'accès AWS, à ne jamais commiter ni logger) :
 
-| Environnement | Secret | Valeur |
-| --- | --- | --- |
-| `dev`  | `AWS_ACCESS_KEY_ID`     | sortie `deploy_user_dev_access_key_id` |
-| `dev`  | `AWS_SECRET_ACCESS_KEY` | sortie `deploy_user_dev_secret_access_key` |
-| `prod` | `AWS_ACCESS_KEY_ID`     | sortie `deploy_user_prod_access_key_id` |
-| `prod` | `AWS_SECRET_ACCESS_KEY` | sortie `deploy_user_prod_secret_access_key` |
+| Environnement | Secret                  | Valeur                                      |
+| ------------- | ----------------------- | ------------------------------------------- |
+| `dev`         | `AWS_ACCESS_KEY_ID`     | sortie `deploy_user_dev_access_key_id`      |
+| `dev`         | `AWS_SECRET_ACCESS_KEY` | sortie `deploy_user_dev_secret_access_key`  |
+| `prod`        | `AWS_ACCESS_KEY_ID`     | sortie `deploy_user_prod_access_key_id`     |
+| `prod`        | `AWS_SECRET_ACCESS_KEY` | sortie `deploy_user_prod_secret_access_key` |
 
 Pour `prod`, ajoutez idéalement une règle de protection (reviewers requis)
 sur l'environnement GitHub, pour valider manuellement chaque déploiement

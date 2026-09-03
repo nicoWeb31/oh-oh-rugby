@@ -40,15 +40,15 @@ L'infrastructure (DynamoDB, Lambda, API Gateway, S3, CloudFront) est gérée par
 
 ### API locale
 
-| Méthode | Route |
-| --- | --- |
-| `GET` | `/api/health` |
-| `GET` | `/api/competitions/comp1` |
-| `GET` | `/api/matchdays?competitionId=comp1` |
-| `GET` | `/api/players` |
-| `GET` | `/api/predictions?playerId=p1&matchdayId=md5` |
-| `PUT` | `/api/predictions/:matchId` |
-| `GET` | `/api/ranking?competitionId=comp1` |
+| Méthode | Route                                         |
+| ------- | --------------------------------------------- |
+| `GET`   | `/api/health`                                 |
+| `GET`   | `/api/competitions/comp1`                     |
+| `GET`   | `/api/matchdays?competitionId=comp1`          |
+| `GET`   | `/api/players`                                |
+| `GET`   | `/api/predictions?playerId=p1&matchdayId=md5` |
+| `PUT`   | `/api/predictions/:matchId`                   |
+| `GET`   | `/api/ranking?competitionId=comp1`            |
 
 Construire les applications de production :
 
@@ -291,4 +291,5 @@ Join the Nx community:
 - [LinkedIn](https://www.linkedin.com/company/nrwl)
 - [YouTube](https://www.youtube.com/@nxdevtools)
 - [Blog](https://nx.dev/blog)
+
 # oh-oh-rugby

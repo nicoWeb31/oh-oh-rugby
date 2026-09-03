@@ -3,7 +3,14 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "module": "commonjs",
-    "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest", "express"]
+    "types": [
+      "vitest/globals",
+      "vitest/importMeta",
+      "vite/client",
+      "node",
+      "vitest",
+      "express"
+    ]
   },
   "include": [
     "vitest.config.ts",

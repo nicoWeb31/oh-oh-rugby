@@ -47,7 +47,7 @@ L'application doit permettre de :
 
 - Les matchs d'une journée sont joués le week-end.
 - Une journée devient active le lundi matin de la semaine de ses matchs.
-- Une journée cesse d'être active le vendredi soir de la date de ses matchs.
+- Une journée cesse d'être active le samedi midi de la date de ses matchs.
 - Un pronostic ne peut être saisi ou modifié que pendant cette fenêtre active.
 - En dehors de cette période, la journée est visible mais verrouillée pour la saisie.
 - Pendant la période active, un joueur peut modifier ses pronostics autant de fois qu'il le souhaite.

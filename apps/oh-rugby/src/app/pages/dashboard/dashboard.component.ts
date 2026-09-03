@@ -20,7 +20,7 @@ import { FormatDatePipe } from '../../pipes/format-date.pipe';
         <section class="active-card">
           <div class="active-badge">ACTIVE</div>
           <div class="active-label">{{ activeMatchday()!.label }}</div>
-          <p class="active-hint">Les pronostics sont ouverts jusqu'au vendredi soir</p>
+          <p class="active-hint">Les pronostics sont ouverts jusqu'au samedi midi</p>
           <a [routerLink]="['/matchday', activeMatchday()!.id]" class="btn-primary">
             SAISIR MES PRONOSTICS →
           </a>

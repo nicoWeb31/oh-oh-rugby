@@ -41,12 +41,12 @@ export class MatchdayService {
     monday.setDate(matchDate.getDate() - ((matchDate.getDay() + 6) % 7));
     monday.setHours(0, 0, 0, 0);
 
-    const friday = new Date(monday);
-    friday.setDate(monday.getDate() + 4);
-    friday.setHours(23, 59, 59, 999);
+    const saturdayNoon = new Date(monday);
+    saturdayNoon.setDate(monday.getDate() + 5);
+    saturdayNoon.setHours(12, 0, 0, 0);
 
     if (now < monday) return MatchdayStatus.UPCOMING;
-    return now <= friday ? MatchdayStatus.ACTIVE : MatchdayStatus.LOCKED;
+    return now < saturdayNoon ? MatchdayStatus.ACTIVE : MatchdayStatus.LOCKED;
   }
 
   getActive(): Matchday | undefined {

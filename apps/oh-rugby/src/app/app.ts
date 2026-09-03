@@ -40,6 +40,7 @@ import { RankingService } from './services/ranking.service';
     .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
     .nav {
       display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; row-gap: 0.6rem;
       padding: 0.75rem 1.5rem;
       border-bottom: 2px solid var(--gold);
       background: var(--bg);
@@ -63,6 +64,13 @@ import { RankingService } from './services/ranking.service';
       font-family: inherit; font-weight: 700;
     }
     .logout:hover { border-color: var(--gold); color: var(--gold); }
+
+    @media (max-width: 640px) {
+      .nav { padding: 0.75rem 1rem; }
+      .nav-links { order: 3; flex-basis: 100%; justify-content: center; gap: 1.25rem; }
+      .player-label { display: none; }
+    }
+
     .main-content { flex: 1; max-width: 640px; width: 100%; margin: 0 auto; padding: 1.5rem 1rem; }
     .footer {
       display: flex; justify-content: space-between;

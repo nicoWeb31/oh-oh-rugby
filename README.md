@@ -63,6 +63,15 @@ npm exec -- nx run back-oh-rugby:build --configuration=production
 - `back-oh-rugby` : API Express, exécutée localement avec Node puis déployée dans AWS Lambda.
 - `models` : modèles TypeScript partagés.
 
+Documentation détaillée par thème — ce qui a été fait, pourquoi, et les concepts sous-jacents expliqués pour qui découvre le projet ou la stack :
+
+- [`docs/frontend.md`](docs/frontend.md) — Angular : routing, fake auth, environnements, direction artistique, tests.
+- [`docs/backend.md`](docs/backend.md) — Express/Lambda : adaptateur serverless-http, DynamoDB single-table, scoring, verrouillage serveur.
+- [`docs/infra.md`](docs/infra.md) — Terraform/CI-CD : bootstrap, isolation des environnements, sécurité IAM, pipeline de déploiement.
+- [`docs/security.md`](docs/security.md) — état des lieux sécurité transversal : ce qui protège déjà l'app, les failles connues classées par priorité, pourquoi c'est un compromis assumé.
+
+`SPEC.md` reste la spec produit/métier (règles, modèle de données), `infra/terraform/README.md` le runbook opérationnel (bootstrap, déploiement, dépannage).
+
 Commandes Nx utiles :
 
 ```bash

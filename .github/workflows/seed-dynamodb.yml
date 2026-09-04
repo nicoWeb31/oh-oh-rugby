@@ -4,10 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment'
+        # `prod` is intentionally not a choice: the seed script overwrites
+        # (PutItem, not merge) every item at each key, and prod now holds
+        # real player predictions. Re-seeding it would silently destroy
+        # them. If prod ever genuinely needs a full data reset, do it as a
+        # deliberate one-off (edit this file to add `prod` back, run it,
+        # revert), never as a routine option sitting in the dropdown.
+        description: 'Target environment (prod excluded on purpose — see comment above)'
         required: true
         type: choice
-        options: [dev, prod]
+        options: [dev]
 
 permissions:
   contents: read

@@ -90,12 +90,48 @@ est câblé ici.
   d'API réelle injectée dans `environment.<env>.ts`, sync S3, invalide
   CloudFront.
 
+### Seed DynamoDB — fonctionnement et garde-fous
+
 Premier déploiement d'un environnement : la table DynamoDB est vide. Lancez
 manuellement le workflow **Seed DynamoDB** (`workflow_dispatch` dans l'onglet
-Actions, choisir l'environnement) pour charger la compétition, les 26
-journées, les joueurs et les pronostics de démo. Ce script **écrase** les
-items existants : ne le relancez pas une fois que de vrais pronostics auront
-été saisis, sous peine de les perdre.
+Actions) pour charger la compétition, les 26 journées, les joueurs et les
+pronostics de démo (`apps/back-oh-rugby/src/scripts/seed.ts`).
+
+Comment ça marche concrètement : le script construit un item DynamoDB par
+compétition/journée/joueur/pronostic de démo, puis les écrit par lots de 25
+(`BatchWriteItem`, la taille max acceptée par cette API DynamoDB) via des
+`PutRequest`. **Un `PutRequest` remplace intégralement l'item existant à la
+même clé (`PK`/`SK`)** — ce n'est pas un *merge* : si l'item existe déjà, ses
+attributs précédents sont perdus, pas fusionnés avec les nouveaux. C'est ce
+qui rend le seed **destructif** : relancé sur une table qui contient déjà de
+vrais pronostics de joueurs, il les écrase silencieusement par les données de
+démo, sans avertissement ni confirmation.
+
+`prod` contient désormais de vraies données de joueurs. Deux garde-fous
+distincts protègent contre une perte accidentelle, à deux niveaux différents :
+
+- **Le workflow ne propose plus `prod`** comme environnement cible
+  (`.github/workflows/seed-dynamodb.yml`, `options: [dev]`) : le menu
+  déroulant `workflow_dispatch` ne permet plus de le sélectionner. Ce n'est
+  pas un simple oubli à corriger si besoin — un commentaire dans le fichier
+  explique que réactiver `prod` doit rester un acte volontaire et ponctuel
+  (modifier le fichier, lancer, annuler), jamais une option qui traîne dans
+  un menu où un clic malheureux suffirait à tout écraser.
+- **`terraform` refuse de supprimer ou recréer la table**
+  (`modules/dynamodb/main.tf`, `lifecycle { prevent_destroy = true }`) : si
+  un futur changement de schéma (renommer une clé, changer `hash_key`)
+  forçait Terraform à détruire puis recréer la table, l'`apply` échouerait
+  explicitement au lieu de supprimer silencieusement toutes les données.
+  S'applique aux deux environnements (Terraform n'autorise pas de condition
+  sur ce réglage — il doit être une valeur fixe) ; pour vraiment détruire une
+  table (ex. remettre `dev` à zéro), il faut retirer ce bloc temporairement,
+  appliquer, puis le remettre.
+- **`point_in_time_recovery` reste le filet de secours final en `prod`** (déjà
+  mentionné plus haut) : si malgré ces deux garde-fous des données étaient
+  perdues ou corrompues, une restauration manuelle à un instant des 35
+  derniers jours reste possible. Ça ne remplace pas les deux protections
+  ci-dessus — restaurer un backup a un coût opérationnel et ne rattrape rien
+  automatiquement — mais c'est un dernier recours qui existe.
 
 ## Commandes manuelles (dépannage)
 
@@ -119,5 +155,11 @@ terraform apply -var-file=envs/dev.tfvars
   scoping par ARN utile pour les actions de gestion dont Terraform a besoin.
   Le reste (DynamoDB, Lambda, IAM, S3, logs) est scopé au préfixe
   `oh-rugby-{env}`.
-- Pas de rate limiting / WAF sur l'API — non nécessaire à l'échelle actuelle
-  (petit groupe de joueurs), à revisiter avant une exposition publique large.
+- Throttling global sur l'API Gateway (15 req/s, burst 40) et
+  `reserved_concurrent_executions = 10` sur la Lambda — un plafond volontairement
+  large pour un petit groupe de joueurs, qui protège surtout contre un script
+  qui boucle ou un pic accidentel, pas une vraie protection anti-abus. Le
+  burst tient compte du fait que la saisie de pronostic (front) envoie une
+  requête par clic sans regrouper les écritures — voir `docs/infra.md`. Pas de
+  WAF ni de quota par IP/utilisateur ; à revisiter avant une exposition
+  publique large.

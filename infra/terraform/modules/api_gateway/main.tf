@@ -21,6 +21,20 @@ resource "aws_apigatewayv2_stage" "default" {
   name        = "$default"
   auto_deploy = true
 
+  # Throttle at the edge, before Lambda/DynamoDB are ever touched. Global to
+  # the whole API (no per-IP/per-user quota, no WAF) — a blunt ceiling meant
+  # to stop a runaway script or accidental request loop, not real abuse.
+  # Burst is sized for the matchday prediction form: each click on an
+  # outcome/bonus fires a PUT then a ranking GET with no debounce, so a
+  # player blitzing through a whole matchday (7 matches) can burst ~40
+  # requests, and several players doing that at once share this same
+  # counter. Sizing it too low would silently drop saves under load (the
+  # front has no 429 retry/error UI yet).
+  default_route_settings {
+    throttling_rate_limit  = 15
+    throttling_burst_limit = 40
+  }
+
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.access_logs.arn
     format = jsonencode({

@@ -62,6 +62,11 @@ resource "aws_lambda_function" "api" {
   memory_size   = var.memory_size
   timeout       = var.timeout
 
+  # Complements the API Gateway throttle: caps how many invocations can run
+  # in parallel, which in turn caps the max concurrent load on DynamoDB and
+  # the worst-case cost if something loops out of control.
+  reserved_concurrent_executions = 10
+
   filename         = data.archive_file.placeholder.output_path
   source_code_hash = data.archive_file.placeholder.output_base64sha256
 

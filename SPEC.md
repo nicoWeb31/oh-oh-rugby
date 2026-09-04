@@ -295,35 +295,33 @@ En développement, les données de démonstration (compétition, 26 journées, j
 
 ### Base de données — DynamoDB
 
+> Schéma final tel qu'implémenté (`apps/back-oh-rugby/src/dynamodb/keys.ts`) — plus simple que la première esquisse envisagée ci-dessous à l'origine. Détail du raisonnement dans `docs/backend.md` et `infra/terraform/README.md`.
+
 - Table principale : `oh-rugby-{env}` (single-table design)
 - Clé de partition (`PK`) et clé de tri (`SK`) selon le pattern suivant. Chaque item porte aussi un attribut `entityType` et les dates sont enregistrées en ISO 8601 UTC.
 
-| Entité                   | PK                                         | SK                     |
-| ------------------------ | ------------------------------------------ | ---------------------- |
-| Competition              | `COMP#{id}`                                | `META`                 |
-| Matchday                 | `COMP#{compId}`                            | `MATCHDAY#{id}`        |
-| Match                    | `MATCHDAY#{matchdayId}`                    | `MATCH#{id}`           |
-| Player                   | `PLAYER#{id}`                              | `META`                 |
-| Prediction               | `PLAYER#{playerId}`                        | `PRED#MATCH#{matchId}` |
-| RankingEntry global      | `COMP#{compId}#RANK#GLOBAL`                | `PLAYER#{playerId}`    |
-| RankingEntry par journée | `COMP#{compId}#RANK#MATCHDAY#{matchdayId}` | `PLAYER#{playerId}`    |
+| Entité      | PK                  | SK               |
+| ----------- | ------------------- | ---------------- |
+| Competition | `COMP#{id}`         | `META`           |
+| Matchday    | `MATCHDAY#{id}`     | `META`           |
+| Player      | `PLAYER#{id}`       | `META`           |
+| Prediction  | `PLAYER#{playerId}` | `PRED#{matchId}` |
 
-- Index secondaire global (GSI) `MatchdayIndex` : `GSI1PK = MATCHDAY#{matchdayId}`, `GSI1SK = MATCH#{matchId}` pour récupérer tous les matchs d'une journée.
-- Index secondaire global (GSI) `MatchPredictionsIndex` : `GSI2PK = MATCH#{matchId}`, `GSI2SK = PLAYER#{playerId}` pour récupérer tous les pronostics d'un match.
-- Un accès direct « pronostics d'un joueur pour une journée » n'est pas encore couvert par ces deux index. Il est explicitement à décider avant l'implémentation : troisième GSI, ou lecture ciblée de la partition du joueur si le volume le permet.
-- Les entrées de classement sont des projections de lecture : leur stratégie de mise à jour (à la demande ou matérialisée) reste à décider.
+- **Aucune entité `Match` séparée** : les matchs sont imbriqués dans l'item `Matchday` (jamais lus indépendamment), et **aucun GSI** n'a été créé. Les patterns d'accès nécessaires (lire une compétition, les journées, les pronostics d'un joueur) sont tous couverts par `PK`/`SK` seuls, dès lors qu'on connaît l'id de la ressource.
+- La journée d'un match se déduit de son id sans index inverse : les ids de match sont générés sous la forme `{matchdayId}-m{n}`, donc `matchdayIdFromMatchId()` retrouve le `matchdayId` en coupant la chaîne — pas besoin d'index séparé à maintenir pour ce besoin.
+- Il n'y a pas d'item `RankingEntry` persistant : le classement (global ou par journée) est **calculé à la demande** à chaque requête `GET /api/ranking`, pas matérialisé — l'échelle V1 (quelques joueurs) rend ce recalcul trivial.
+- Lister les joueurs (`GET /api/players`) utilise un `Scan` filtré sur `entityType = PLAYER` plutôt qu'un accès direct — assumé à l'échelle V1, à revisiter si la table grossit significativement.
 - Région AWS : `eu-west-3` (Paris)
 - Environnements : `dev` et `prod` (deux tables séparées)
 
-#### Accès attendus en V1
+#### Accès réels en V1
 
-| Besoin                                           | Accès DynamoDB prévu                             |
-| ------------------------------------------------ | ------------------------------------------------ |
-| Lire une compétition et ses journées             | `Query` sur `PK = COMP#{competitionId}`          |
-| Lire les matchs d'une journée                    | `Query` sur `MatchdayIndex`                      |
-| Lire les pronostics d'un match                   | `Query` sur `MatchPredictionsIndex`              |
-| Lire les pronostics d'un joueur pour une journée | À décider avant le développement du repository   |
-| Lire un classement global ou par journée         | `Query` sur la partition de classement concernée |
+| Besoin                                           | Accès DynamoDB                                              |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| Lire une compétition                             | `GetItem` sur `PK = COMP#{id}`, `SK = META`                  |
+| Lire une journée et ses matchs (imbriqués)       | `GetItem` sur `PK = MATCHDAY#{id}`, `SK = META`               |
+| Lire les pronostics d'un joueur (+ filtre journée) | `Query` sur `PK = PLAYER#{playerId}`, `begins_with(SK, 'PRED#')`, filtrage applicatif sur les ids de match de la journée |
+| Lire un classement global ou par journée         | Calcul à la demande à partir des pronostics et des journées concernées, pas de lecture dédiée |
 
 ### Infrastructure
 

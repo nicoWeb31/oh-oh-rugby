@@ -54,20 +54,7 @@ describe('scorePrediction', () => {
     ).toBe(0);
   });
 
-  it('returns 3 for a correct outcome with no bonus', () => {
-    const match = makeMatch({
-      result: {
-        outcome: MatchOutcome.HOME,
-        offensiveBonusAwarded: false,
-        defensiveBonusAwarded: false,
-      },
-    });
-    expect(
-      scorePrediction(makePrediction({ outcome: MatchOutcome.HOME }), match),
-    ).toBe(3);
-  });
-
-  it('adds 1 point per correctly predicted bonus, only when the outcome is correct', () => {
+  it('awards 1 point per bonus when correctly predicting it will be awarded', () => {
     const match = makeMatch({
       result: {
         outcome: MatchOutcome.HOME,
@@ -83,7 +70,36 @@ describe('scorePrediction', () => {
     expect(scorePrediction(prediction, match)).toBe(5);
   });
 
-  it('returns 4 for a correct draw prediction with no bonus', () => {
+  it('awards 1 point per bonus when correctly predicting it will NOT be awarded', () => {
+    const match = makeMatch({
+      result: {
+        outcome: MatchOutcome.HOME,
+        offensiveBonusAwarded: false,
+        defensiveBonusAwarded: false,
+      },
+    });
+    expect(
+      scorePrediction(makePrediction({ outcome: MatchOutcome.HOME }), match),
+    ).toBe(5);
+  });
+
+  it('gives no bonus points when a bonus prediction is wrong, in either direction', () => {
+    const match = makeMatch({
+      result: {
+        outcome: MatchOutcome.HOME,
+        offensiveBonusAwarded: false,
+        defensiveBonusAwarded: true,
+      },
+    });
+    const prediction = makePrediction({
+      outcome: MatchOutcome.HOME,
+      offensiveBonusPredicted: true,
+      defensiveBonusPredicted: false,
+    });
+    expect(scorePrediction(prediction, match)).toBe(3);
+  });
+
+  it('returns 6 for a correct draw prediction with both bonuses correctly predicted absent', () => {
     const match = makeMatch({
       result: {
         outcome: MatchOutcome.DRAW,
@@ -93,7 +109,7 @@ describe('scorePrediction', () => {
     });
     expect(
       scorePrediction(makePrediction({ outcome: MatchOutcome.DRAW }), match),
-    ).toBe(4);
+    ).toBe(6);
   });
 
   it('does not award bonus points when the outcome prediction is wrong', () => {
@@ -191,7 +207,7 @@ describe('buildRanking', () => {
     const ranking = buildRanking(players, matchdays, predictionsByPlayer);
 
     expect(ranking).toEqual([
-      { playerId: 'p1', displayName: 'Thomas', points: 3, rank: 1 },
+      { playerId: 'p1', displayName: 'Thomas', points: 5, rank: 1 },
       { playerId: 'p2', displayName: 'Nicolas', points: 0, rank: 2 },
     ]);
   });

@@ -9,12 +9,12 @@ export class ScoringService {
 
     let points = match.result.outcome === MatchOutcome.DRAW ? 4 : 3;
     if (
-      prediction.offensiveBonusPredicted &&
+      prediction.offensiveBonusPredicted ===
       match.result.offensiveBonusAwarded
     )
       points += 1;
     if (
-      prediction.defensiveBonusPredicted &&
+      prediction.defensiveBonusPredicted ===
       match.result.defensiveBonusAwarded
     )
       points += 1;

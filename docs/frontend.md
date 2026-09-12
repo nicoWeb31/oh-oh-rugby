@@ -30,9 +30,10 @@ Le fichier `apps/oh-rugby/src/app/nx-welcome.ts` est un résidu du générateur 
 
 ## Authentification (fake auth)
 
-Introduite dans le commit `4c725db`. **Ce n'est pas un vrai système d'authentification** — c'est écrit noir sur blanc dans le code (`auth.guard.ts` : *"Not real security"*) et dans `SPEC.md` (l'authentification réelle est explicitement hors périmètre V1).
+Introduite dans le commit `4c725db`. **Ce n'est pas un vrai système d'authentification** — c'est écrit noir sur blanc dans le code (`auth.guard.ts` : _"Not real security"_) et dans `SPEC.md` (l'authentification réelle est explicitement hors périmètre V1).
 
 Mécanisme :
+
 - Chaque joueur a un **code statique** (partagé oralement dans le groupe), stocké côté backend et jamais renvoyé par `GET /api/players`.
 - `/login` : l'utilisateur choisit son nom dans un `<select>`, tape son code, l'app appelle `POST /api/auth/verify`. En cas de succès, `{playerId, code}` est écrit dans `localStorage` (`PlayerService`).
 - `authGuard` (fonctionnel, `CanActivateFn`) protège `''`, `matchday/:id` et `ranking` : il vérifie juste la **présence** d'un couple `{playerId, code}` en `localStorage` (`hasStoredAuth()`), de façon synchrone, pour ne pas dépendre d'un appel réseau avant de décider d'autoriser la navigation.
@@ -52,11 +53,11 @@ Chaque service (`PlayerService`, `MatchdayService`, `PredictionService`, `Rankin
 
 L'URL de l'API n'est jamais codée en dur dans les services : elle vient de `environment.apiUrl`, avec trois fichiers :
 
-| Fichier | Rôle |
-| --- | --- |
-| `environment.ts` | valeur par défaut, utilisée par `nx serve` en développement local (`http://localhost:3333/api`) |
-| `environment.dev.ts` | placeholder (`https://REPLACED_AT_DEPLOY_TIME/api`), écrasé par le workflow GitHub Actions juste avant `nx build --configuration=dev` avec l'URL réelle sortie par Terraform |
-| `environment.prod.ts` | même mécanisme pour `--configuration=production` |
+| Fichier               | Rôle                                                                                                                                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `environment.ts`      | valeur par défaut, utilisée par `nx serve` en développement local (`http://localhost:3333/api`)                                                                              |
+| `environment.dev.ts`  | placeholder (`https://REPLACED_AT_DEPLOY_TIME/api`), écrasé par le workflow GitHub Actions juste avant `nx build --configuration=dev` avec l'URL réelle sortie par Terraform |
+| `environment.prod.ts` | même mécanisme pour `--configuration=production`                                                                                                                             |
 
 Le remplacement de fichier au build est déclaré dans `project.json` via `fileReplacements` :
 
@@ -98,7 +99,11 @@ Le style "arcade vintage" (référence Jonah Lomu Rugby 1997, `SPEC.md`) est imp
 
 ```css
 :root {
-  --bg: #0e0e12; --gold: #e8c84a; --red: #c0392b; --muted: #666676; --border: #2a2a38;
+  --bg: #0e0e12;
+  --gold: #e8c84a;
+  --red: #c0392b;
+  --muted: #666676;
+  --border: #2a2a38;
 }
 ```
 

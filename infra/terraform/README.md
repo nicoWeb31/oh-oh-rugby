@@ -101,7 +101,7 @@ Comment ça marche concrètement : le script construit un item DynamoDB par
 compétition/journée/joueur/pronostic de démo, puis les écrit par lots de 25
 (`BatchWriteItem`, la taille max acceptée par cette API DynamoDB) via des
 `PutRequest`. **Un `PutRequest` remplace intégralement l'item existant à la
-même clé (`PK`/`SK`)** — ce n'est pas un *merge* : si l'item existe déjà, ses
+même clé (`PK`/`SK`)** — ce n'est pas un _merge_ : si l'item existe déjà, ses
 attributs précédents sont perdus, pas fusionnés avec les nouveaux. C'est ce
 qui rend le seed **destructif** : relancé sur une table qui contient déjà de
 vrais pronostics de joueurs, il les écrase silencieusement par les données de

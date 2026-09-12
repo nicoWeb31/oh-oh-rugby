@@ -30,7 +30,7 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
 
 Après le premier déploiement, chaque requête sur `dev` échouait avec `Runtime.HandlerNotFound: main.handler is undefined or not exported`, alors que le CORS semblait en cause côté navigateur. La vraie cause : le build esbuild/webpack du projet Nx (template par défaut, pensé pour `node main.js` en exécution directe) ne configurait pas `output.library`. Résultat : le bundle final n'exposait pas ses `export` via `module.exports` — `require('./main.js')` renvoyait `{}`, donc Lambda ne trouvait jamais `.handler`.
 
-**Pédagogie** : un bundler (esbuild, webpack) transforme plusieurs fichiers ES modules en un seul fichier. Pour qu'un `require()` externe (ici, le runtime Lambda) puisse lire les exports de ce fichier, le bundler doit explicitement écrire ces exports sur `module.exports` au format CommonJS — ce n'est pas automatique, c'est une option de configuration (`library: { type: 'commonjs2' }`). Sans elle, le code à l'intérieur du bundle continue de fonctionner entre lui (imports/exports internes résolus), mais rien n'est visible depuis l'extérieur du fichier. C'est un piège classique de la migration "app Node classique" → "bundle Lambda" : le bundle *s'exécute* correctement (pas d'erreur de syntaxe, pas de crash au chargement), donc rien ne semble cassé jusqu'à ce qu'un système externe essaie de lire une de ses propriétés exportées.
+**Pédagogie** : un bundler (esbuild, webpack) transforme plusieurs fichiers ES modules en un seul fichier. Pour qu'un `require()` externe (ici, le runtime Lambda) puisse lire les exports de ce fichier, le bundler doit explicitement écrire ces exports sur `module.exports` au format CommonJS — ce n'est pas automatique, c'est une option de configuration (`library: { type: 'commonjs2' }`). Sans elle, le code à l'intérieur du bundle continue de fonctionner entre lui (imports/exports internes résolus), mais rien n'est visible depuis l'extérieur du fichier. C'est un piège classique de la migration "app Node classique" → "bundle Lambda" : le bundle _s'exécute_ correctement (pas d'erreur de syntaxe, pas de crash au chargement), donc rien ne semble cassé jusqu'à ce qu'un système externe essaie de lire une de ses propriétés exportées.
 
 Le même commit a aussi corrigé la détection "suis-je en local ou sur Lambda ?". L'idiome classique `require.main === module` (« ce fichier est-il le point d'entrée du process, ou un import ? ») ne fonctionne pas ici car le runtime Node de Lambda charge le bundle CommonJS via un `import()` dynamique, ce qui fait que Node le considère comme la racine de son propre graphe de require — la condition était donc toujours vraie, y compris en Lambda, et démarrait un `app.listen()` inutile (et bloquant) à chaque cold start. La correction retenue teste `AWS_LAMBDA_FUNCTION_NAME`, une variable d'environnement uniquement présente dans un vrai environnement d'exécution Lambda — un signal fiable là où l'idiome générique ne l'était pas.
 
@@ -40,16 +40,16 @@ Le même commit a aussi corrigé la détection "suis-je en local ou sur Lambda ?
 
 Toutes les entités (compétition, journée, joueur, pronostic) vivent dans **une seule table** DynamoDB, différenciées par leurs clés `PK` (partition key) et `SK` (sort key), plus un attribut `entityType` pour le débogage/scan. C'est l'opposé d'un modèle relationnel où chaque type de donnée a sa propre table.
 
-**Pédagogie** : DynamoDB ne fait pas de jointures. Un "single-table design" consiste à choisir des clés `PK`/`SK` qui encodent directement les patterns d'accès dont l'application a besoin, pour que chaque lecture soit un `GetItem` ou un `Query` unique — au prix de devoir savoir à l'avance *comment* les données seront lues (contrairement à SQL où on peut interroger la donnée sous n'importe quel angle après coup).
+**Pédagogie** : DynamoDB ne fait pas de jointures. Un "single-table design" consiste à choisir des clés `PK`/`SK` qui encodent directement les patterns d'accès dont l'application a besoin, pour que chaque lecture soit un `GetItem` ou un `Query` unique — au prix de devoir savoir à l'avance _comment_ les données seront lues (contrairement à SQL où on peut interroger la donnée sous n'importe quel angle après coup).
 
 Les clés réellement utilisées (`src/dynamodb/keys.ts`) :
 
-| Entité | PK | SK |
-| --- | --- | --- |
-| Competition | `COMP#{id}` | `META` |
-| Matchday | `MATCHDAY#{id}` | `META` |
-| Player | `PLAYER#{id}` | `META` |
-| Prediction | `PLAYER#{playerId}` | `PRED#{matchId}` |
+| Entité      | PK                  | SK               |
+| ----------- | ------------------- | ---------------- |
+| Competition | `COMP#{id}`         | `META`           |
+| Matchday    | `MATCHDAY#{id}`     | `META`           |
+| Player      | `PLAYER#{id}`       | `META`           |
+| Prediction  | `PLAYER#{playerId}` | `PRED#{matchId}` |
 
 > **Divergence avec `SPEC.md`** : la spec décrit un schéma plus élaboré (`Matchday` sous `PK = COMP#{compId}` / `SK = MATCHDAY#{id}`, une entité `Match` séparée avec ses propres clés, deux GSI `MatchdayIndex`/`MatchPredictionsIndex`, et une SK de prédiction `PRED#MATCH#{matchId}`). Le code implémenté est plus simple : `Matchday` a sa propre partition indépendante de la compétition (`PK = MATCHDAY#{id}`), les matchs sont **imbriqués** dans l'objet `Matchday` (pas d'entité séparée), il n'y a **aucun GSI**, et la SK de prédiction est `PRED#{matchId}` (sans le segment `MATCH#`). Le fichier `infra/terraform/README.md` documente déjà cette décision ("pas de GSI ... les matchs sont stockés imbriqués") mais `SPEC.md` n'a pas été mis à jour pour refléter le schéma de clés final — à corriger si vous voulez que la spec reste une source de vérité.
 
@@ -65,7 +65,7 @@ Ajouter un GSI a un coût réel (écriture dupliquée à chaque `PutItem`, cohé
 
 ### Lister les joueurs : un `Scan` filtré, assumé comme tel
 
-`listPlayers()` (`src/repositories/player.repository.ts`) fait un `ScanCommand` avec un `FilterExpression` sur `entityType = 'PLAYER'`. **Pédagogie** : un `Scan` lit *toute* la table puis filtre côté serveur DynamoDB (contrairement à un `Query`, qui cible directement une partition) — c'est l'opération à éviter en général car son coût croît avec la taille totale de la table, indépendamment du nombre de résultats utiles. Ici c'est un choix délibéré et commenté dans le code : à l'échelle V1 (une poignée de joueurs, un groupe d'amis), le coût est négligeable, et créer un index dédié uniquement pour lister quelques joueurs serait une optimisation prématurée. À revisiter si la table grossit significativement (beaucoup de compétitions/saisons).
+`listPlayers()` (`src/repositories/player.repository.ts`) fait un `ScanCommand` avec un `FilterExpression` sur `entityType = 'PLAYER'`. **Pédagogie** : un `Scan` lit _toute_ la table puis filtre côté serveur DynamoDB (contrairement à un `Query`, qui cible directement une partition) — c'est l'opération à éviter en général car son coût croît avec la taille totale de la table, indépendamment du nombre de résultats utiles. Ici c'est un choix délibéré et commenté dans le code : à l'échelle V1 (une poignée de joueurs, un groupe d'amis), le coût est négligeable, et créer un index dédié uniquement pour lister quelques joueurs serait une optimisation prématurée. À revisiter si la table grossit significativement (beaucoup de compétitions/saisons).
 
 ### Repositories : la frontière entre domaine et DynamoDB
 
@@ -105,14 +105,14 @@ Additionne, pour chaque joueur, les points de tous ses pronostics sur l'ensemble
 
 ### `POST /api/auth/verify` et le champ `code` : un frein, pas une authentification
 
-Le commit `4c725db` a introduit un système de "fake auth" : chaque joueur a un `code` statique stocké dans DynamoDB (jamais renvoyé par l'API grâce à `toPublicPlayer()`), vérifié par `playerRepository.verifyCode()`. Le commentaire dans le code est explicite : *"Lightweight deterrent against playing as someone else, not real auth (static codes shared by word of mouth)"*.
+Le commit `4c725db` a introduit un système de "fake auth" : chaque joueur a un `code` statique stocké dans DynamoDB (jamais renvoyé par l'API grâce à `toPublicPlayer()`), vérifié par `playerRepository.verifyCode()`. Le commentaire dans le code est explicite : _"Lightweight deterrent against playing as someone else, not real auth (static codes shared by word of mouth)"_.
 
 **Ce que ça garantit** : un obstacle basique contre "je pronostique à la place d'un ami pour rigoler", suffisant pour un petit groupe de confiance.
 **Ce que ça ne garantit pas** : ce n'est pas un mot de passe changeable, pas de hash (le code est comparé en clair après lecture DynamoDB), pas de session/token — chaque écriture renvoie le `code` en clair dans le body de la requête. Un `code` intercepté ou deviné donne un accès total et permanent à l'identité du joueur, sans expiration ni révocation possible autrement qu'en changeant le `code` en base. C'est un choix assumé pour la V1 (voir `SPEC.md`, "authentification réelle" listée en "Hors Périmètre Immédiat"), pas un oubli — mais toute évolution vers une exposition plus large que le groupe d'amis initial devrait remplacer ce mécanisme avant d'ouvrir l'accès plus largement.
 
 ### `PUT /api/matches/:matchId/result` (`/admin`, commit `12a10a0`) : aucune protection
 
-Cette route enregistre le résultat réel d'un match (issue + bonus obtenus), consommé ensuite par `scorePrediction`. Le commentaire au-dessus dans `app.ts` est direct : *"No auth on this route: consistent with the rest of the MVP (no auth anywhere yet). Anyone with the app URL can record a match result."* Contrairement à `PUT /api/predictions/:matchId`, il n'y a même pas de vérification de `code` ici — n'importe qui connaissant l'URL de l'API peut falsifier n'importe quel résultat de match, donc influencer le classement de tout le monde. C'est une dette de sécurité volontairement non traitée pour l'instant (page `/admin` non protégée côté front non plus), à corriger avant toute ouverture au-delà du cercle de confiance initial.
+Cette route enregistre le résultat réel d'un match (issue + bonus obtenus), consommé ensuite par `scorePrediction`. Le commentaire au-dessus dans `app.ts` est direct : _"No auth on this route: consistent with the rest of the MVP (no auth anywhere yet). Anyone with the app URL can record a match result."_ Contrairement à `PUT /api/predictions/:matchId`, il n'y a même pas de vérification de `code` ici — n'importe qui connaissant l'URL de l'API peut falsifier n'importe quel résultat de match, donc influencer le classement de tout le monde. C'est une dette de sécurité volontairement non traitée pour l'instant (page `/admin` non protégée côté front non plus), à corriger avant toute ouverture au-delà du cercle de confiance initial.
 
 ## Données de démo et seed
 
@@ -121,7 +121,7 @@ Les données de démonstration (`src/data/matchdays.seed.ts`, `players.seed.ts`,
 - **En développement local sans DynamoDB configuré** : rien ne les charge automatiquement dans une base — elles servent de source pour le seed. Pour tester l'API localement, il faut soit pointer `DYNAMODB_ENDPOINT` vers une instance DynamoDB Local et lancer le seed dessus, soit cibler l'environnement `dev` réel.
 - **Seed d'un environnement réel** (`src/scripts/seed.ts`, exécuté via `npm run seed:dynamodb` ou le workflow GitHub Actions `seed-dynamodb.yml`) : écrit tous les items en base par lots de 25 (`BatchWriteItem`).
 
-**Le seed n'est pas idempotent au sens strict, mais il est sans risque à rejouer sur une table vide** : chaque `PutItem` remplace intégralement l'item existant à la même clé (comportement standard de `PutCommand`, pas un *merge*). Concrètement, cela veut dire que relancer le seed sur un environnement où de vrais joueurs ont déjà saisi des pronostics **écrase ces pronostics** avec les données de démo. `prod` contenant désormais de vraies données, deux garde-fous empêchent maintenant ce scénario plutôt que de se contenter de l'avertissement en commentaire : le workflow `seed-dynamodb.yml` ne propose plus `prod` comme cible, et la table `prod` a `prevent_destroy = true` côté Terraform. Détail complet dans `infra/terraform/README.md`.
+**Le seed n'est pas idempotent au sens strict, mais il est sans risque à rejouer sur une table vide** : chaque `PutItem` remplace intégralement l'item existant à la même clé (comportement standard de `PutCommand`, pas un _merge_). Concrètement, cela veut dire que relancer le seed sur un environnement où de vrais joueurs ont déjà saisi des pronostics **écrase ces pronostics** avec les données de démo. `prod` contenant désormais de vraies données, deux garde-fous empêchent maintenant ce scénario plutôt que de se contenter de l'avertissement en commentaire : le workflow `seed-dynamodb.yml` ne propose plus `prod` comme cible, et la table `prod` a `prevent_destroy = true` côté Terraform. Détail complet dans `infra/terraform/README.md`.
 
 ## Tests
 

@@ -39,7 +39,7 @@ est classique : un bucket **S3** pour le fichier d'état, une table
 
 Problème : ce bucket S3 et cette table DynamoDB sont eux-mêmes de
 l'infrastructure — il faudrait du Terraform pour les créer, mais ce
-Terraform-là n'a pas encore de backend où stocker *son* propre état. D'où
+Terraform-là n'a pas encore de backend où stocker _son_ propre état. D'où
 `infra/terraform/bootstrap/` : une configuration Terraform **séparée**, dont
 l'état reste local (ou du moins n'a pas besoin du backend qu'elle crée), et
 qui ne s'exécute qu'**une seule fois, manuellement** (voir le README pour la
@@ -52,11 +52,13 @@ commande). Elle crée :
 
 Le Terraform "principal" (`infra/terraform/` racine) référence ensuite ce
 backend via `backend.tf`, mais **sans** y coder en dur le bucket/la région :
+
 ```hcl
 terraform {
   backend "s3" {}
 }
 ```
+
 Les valeurs concrètes sont fournies au moment du `terraform init
 -backend-config=envs/dev.backend.hcl`. Ce découplage permet à la même
 configuration Terraform de pointer vers le state `dev` ou le state `prod`
@@ -96,17 +98,19 @@ Terraform, **chaque commit de code** (un changement de route Express, un
 correctif CSS) déclencherait un `terraform plan/apply` complet sur toute
 l'infra — plus lent, plus risqué (un apply touche potentiellement aussi les
 ressources IAM/réseau), et le state Terraform grossirait avec des hash de zip
-à chaque commit. En séparant, Terraform ne tourne que quand la *forme* de
+à chaque commit. En séparant, Terraform ne tourne que quand la _forme_ de
 l'infra change (nouvelle variable d'env sur la Lambda, nouveau module...),
 et le déploiement de code est une opération plus légère et plus fréquente
 (AWS CLI direct, pas de plan Terraform à recalculer).
 
 Le point technique qui rend ça possible : le bloc
+
 ```hcl
 lifecycle {
   ignore_changes = [filename, source_code_hash]
 }
 ```
+
 sur la ressource `aws_lambda_function`. Sans ça, le prochain `terraform
 apply` détecterait que le code réel déployé par CI diverge du placeholder
 zippé par Terraform, et **écraserait le vrai code par le placeholder** —
@@ -183,7 +187,7 @@ Deux protections supplémentaires ont donc été ajoutées :
   jour être nécessaire (modification volontaire et ponctuelle du fichier,
   jamais une option qui reste disponible en permanence).
 - `modules/dynamodb/main.tf` porte désormais `lifecycle { prevent_destroy =
-  true }` sur la table. **Pédagogie** : ce méta-argument Terraform fait
+true }` sur la table. **Pédagogie** : ce méta-argument Terraform fait
   échouer tout `plan`/`apply`/`destroy` qui impliquerait de supprimer la
   ressource — utile en complément du point précédent, parce qu'il protège
   contre une tout autre catégorie d'erreur (un changement de schéma
@@ -222,7 +226,7 @@ Deux commits (`fa0171d`, `cd061c7`) corrigent une même classe d'erreur, bonne
 n'ont pas de ressource unique à cibler**, et IAM refuse de les autoriser
 scopées à un ARN précis — il faut les accorder sur `Resource: "*"`.
 
-- `logs:DescribeLogGroups` (utilisé par Terraform pour *lire* l'état d'un
+- `logs:DescribeLogGroups` (utilisé par Terraform pour _lire_ l'état d'un
   `aws_cloudwatch_log_group` existant) est un appel de **listing** : on
   demande "quels groupes de logs existent", pas "donne-moi ce groupe précis".
   IAM n'offre pas de scoping fin pour ce genre d'opération.
@@ -236,7 +240,7 @@ Dans les deux cas, le symptôme était le même : `terraform apply` échouait
 avec `AccessDeniedException`/`BadRequestException` alors que la policy IAM
 semblait déjà couvrir CloudWatch Logs — le piège classique étant de croire
 qu'une policy scopée à un préfixe de log group (`log-group:/aws/lambda/...`)
-couvre *toutes* les actions du service, alors que certaines actions
+couvre _toutes_ les actions du service, alors que certaines actions
 "transversales" échappent structurellement au system de scoping par ARN.
 Le réflexe utile : quand une erreur IAM porte sur une action qui ressemble à
 `Describe*`, `List*`, ou une API de type "delivery"/"discovery", suspecter
@@ -258,7 +262,7 @@ chaque fois qu'une requête échoue avant que le serveur ait pu répondre avec
 les bons en-têtes, y compris quand la vraie cause est un crash côté serveur
 n'ayant rien à voir avec CORS. Leçon générale : face à une erreur CORS en
 prod qui n'existe pas en local, vérifier d'abord que le serveur répond
-*du tout* (logs CloudWatch, code de statut réel) avant de creuser la
+_du tout_ (logs CloudWatch, code de statut réel) avant de creuser la
 configuration CORS elle-même.
 
 ### Portée des policies IAM du déploiement
@@ -269,11 +273,11 @@ les CloudWatch Log Groups au préfixe `oh-rugby-{env}` — sauf pour API Gateway
 et CloudFront, où l'accès est accordé au niveau du service entier
 (`apigateway:*`/`cloudfront:*` sur `Resource: "*"`). Raison documentée dans
 le code : ces deux services n'exposent pas de scoping par ARN utile pour les
-actions de *gestion* (création/modification de distribution, de stage, de
+actions de _gestion_ (création/modification de distribution, de stage, de
 route) dont Terraform a besoin — contrairement à DynamoDB ou Lambda, où les
 ARN de ressource permettent un scoping fin. C'est une limite d'AWS IAM, pas
 un choix de laxisme délibéré, mais le risque résiduel (l'utilisateur de
-déploiement pourrait gérer *n'importe quelle* distribution CloudFront ou API
+déploiement pourrait gérer _n'importe quelle_ distribution CloudFront ou API
 Gateway du compte, pas seulement celles du projet) reste réel et documenté
 comme tel dans `infra/terraform/README.md`.
 
@@ -305,8 +309,8 @@ Reprises et expliquées ici (déjà listées dans `infra/terraform/README.md`) :
   personnalisé nécessiterait un certificat ACM (obligatoirement dans
   `us-east-1` pour CloudFront, indépendamment de la région du reste de
   l'infra) et une zone DNS — reporté faute de nom de domaine acheté.
-Voir aussi `docs/security.md` pour une vue d'ensemble sécurité transversale
-(front + back + infra) classée par priorité.
+  Voir aussi `docs/security.md` pour une vue d'ensemble sécurité transversale
+  (front + back + infra) classée par priorité.
 
 - **Throttling global, pas de WAF** : le stage API Gateway limite à 15 req/s
   (burst 40), et la Lambda est plafonnée à 10 exécutions concurrentes

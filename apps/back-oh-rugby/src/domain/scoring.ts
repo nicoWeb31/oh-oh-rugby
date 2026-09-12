@@ -43,12 +43,10 @@ export function scorePrediction(prediction: Prediction, match: Match): number {
   return (
     outcomePoints +
     Number(
-      prediction.offensiveBonusPredicted ===
-        match.result.offensiveBonusAwarded,
+      prediction.offensiveBonusPredicted === match.result.offensiveBonusAwarded,
     ) +
     Number(
-      prediction.defensiveBonusPredicted ===
-        match.result.defensiveBonusAwarded,
+      prediction.defensiveBonusPredicted === match.result.defensiveBonusAwarded,
     )
   );
 }

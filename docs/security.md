@@ -63,7 +63,7 @@ de match, ce qui fausse le score et le classement de **tous** les joueurs, pas
 seulement du tricheur. C'est la faille la plus visible du projet parce que
 c'est la seule qui permet à un tiers d'affecter les autres, plutôt que de
 seulement se faire du tort à lui-même.
-→ *Piste* : exiger un code dédié (`ADMIN_CODE`, variable d'env Lambda),
+→ _Piste_ : exiger un code dédié (`ADMIN_CODE`, variable d'env Lambda),
 vérifié comme le code joueur — même mécanisme, même niveau de garantie
 ("frein", pas authentification forte), coût d'implémentation minime.
 
@@ -71,19 +71,19 @@ vérifié comme le code joueur — même mécanisme, même niveau de garantie
 Express ne pose aujourd'hui ni `X-Content-Type-Options`, ni
 `X-Frame-Options`, ni `Content-Security-Policy`, etc. **Pédagogie** : ces
 en-têtes ne bloquent pas une attaque à eux seuls, ils réduisent la surface
-d'attaques qui *dépendent* du navigateur de la victime (un navigateur qui
+d'attaques qui _dépendent_ du navigateur de la victime (un navigateur qui
 "devine" un type MIME différent de celui déclaré, une page tierce qui
 embarque l'app dans une `<iframe>` invisible pour du clickjacking). Sans
 authentification forte, ce sont des protections en profondeur peu coûteuses
 à ajouter.
-→ *Piste* : middleware `helmet` sur l'app Express — une ligne, aucun risque
+→ _Piste_ : middleware `helmet` sur l'app Express — une ligne, aucun risque
 de régression.
 
 **3. Pas de détection automatique des dépendances vulnérables.**
 Ni Dependabot, ni `npm audit` dans `ci.yml`, ni CodeQL. Une CVE publiée sur
 une dépendance npm du projet (Express, aws-sdk, etc.) ne serait jamais
 signalée automatiquement — il faudrait la découvrir par hasard.
-→ *Piste* : un fichier `.github/dependabot.yml` (alertes + PR de mise à jour
+→ _Piste_ : un fichier `.github/dependabot.yml` (alertes + PR de mise à jour
 automatiques) — configuration pure, aucun coût d'exécution CI.
 
 ### Priorité moyenne
@@ -91,7 +91,7 @@ automatiques) — configuration pure, aucun coût d'exécution CI.
 **4. CloudFront ne renvoie aucun header de sécurité sur le frontend** (CSP,
 HSTS, X-Frame-Options) — même raisonnement que le point 2, mais côté
 distribution statique plutôt que côté API.
-→ *Piste* : attacher la policy managée AWS `Managed-SecurityHeadersPolicy` à
+→ _Piste_ : attacher la policy managée AWS `Managed-SecurityHeadersPolicy` à
 la distribution CloudFront (`aws_cloudfront_response_headers_policy`),
 zéro maintenance.
 
@@ -120,7 +120,7 @@ simple rappel de leur présence dans le paysage sécurité global.
 Le fil conducteur du projet (voir `SPEC.md`, "Hors Périmètre Immédiat") est
 un MVP pour un groupe d'amis, pas une application exposée publiquement. La
 plupart des lacunes ci-dessus ont un coût de correction très inférieur à
-leur risque réel *à cette échelle* — ce qui justifie de les documenter et de
+leur risque réel _à cette échelle_ — ce qui justifie de les documenter et de
 les reporter, plutôt que de les corriger dans l'urgence. Le signal qui doit
 déclencher leur traitement n'est pas "un jour on aura le temps", mais un
 changement concret de contexte : ouverture à des joueurs qu'on ne connaît

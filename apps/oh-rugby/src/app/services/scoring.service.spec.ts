@@ -44,33 +44,7 @@ describe('ScoringService', () => {
     ).toBe(0);
   });
 
-  it('returns 3 for a correct outcome with no bonus', () => {
-    const match = makeMatch({
-      result: {
-        outcome: MatchOutcome.HOME,
-        offensiveBonusAwarded: false,
-        defensiveBonusAwarded: false,
-      },
-    });
-    expect(
-      service.scoreMatch(makePrediction({ outcome: MatchOutcome.HOME }), match),
-    ).toBe(3);
-  });
-
-  it('returns 4 for a correct draw prediction with no bonus', () => {
-    const match = makeMatch({
-      result: {
-        outcome: MatchOutcome.DRAW,
-        offensiveBonusAwarded: false,
-        defensiveBonusAwarded: false,
-      },
-    });
-    expect(
-      service.scoreMatch(makePrediction({ outcome: MatchOutcome.DRAW }), match),
-    ).toBe(4);
-  });
-
-  it('adds 1 point per correctly predicted bonus, only when the outcome is correct', () => {
+  it('awards 1 point per bonus when correctly predicting it will be awarded', () => {
     const match = makeMatch({
       result: {
         outcome: MatchOutcome.HOME,
@@ -84,5 +58,47 @@ describe('ScoringService', () => {
       defensiveBonusPredicted: true,
     });
     expect(service.scoreMatch(prediction, match)).toBe(5);
+  });
+
+  it('awards 1 point per bonus when correctly predicting it will NOT be awarded', () => {
+    const match = makeMatch({
+      result: {
+        outcome: MatchOutcome.HOME,
+        offensiveBonusAwarded: false,
+        defensiveBonusAwarded: false,
+      },
+    });
+    expect(
+      service.scoreMatch(makePrediction({ outcome: MatchOutcome.HOME }), match),
+    ).toBe(5);
+  });
+
+  it('gives no bonus points when a bonus prediction is wrong, in either direction', () => {
+    const match = makeMatch({
+      result: {
+        outcome: MatchOutcome.HOME,
+        offensiveBonusAwarded: false,
+        defensiveBonusAwarded: true,
+      },
+    });
+    const prediction = makePrediction({
+      outcome: MatchOutcome.HOME,
+      offensiveBonusPredicted: true,
+      defensiveBonusPredicted: false,
+    });
+    expect(service.scoreMatch(prediction, match)).toBe(3);
+  });
+
+  it('returns 6 for a correct draw prediction with both bonuses correctly predicted absent', () => {
+    const match = makeMatch({
+      result: {
+        outcome: MatchOutcome.DRAW,
+        offensiveBonusAwarded: false,
+        defensiveBonusAwarded: false,
+      },
+    });
+    expect(
+      service.scoreMatch(makePrediction({ outcome: MatchOutcome.DRAW }), match),
+    ).toBe(6);
   });
 });

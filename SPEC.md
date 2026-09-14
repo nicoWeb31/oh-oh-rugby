@@ -162,14 +162,16 @@ Les entités suivantes sont partagées par le frontend et l'API. En local, les d
 
 ## Barème de Scoring des Pronostics
 
-| Pronostic                             | Points |
-| ------------------------------------- | ------ |
-| Issue correcte (domicile / extérieur) | 3 pts  |
-| Issue correcte (nul)                  | 4 pts  |
-| Bonus offensif correctement prévu     | 1 pt   |
-| Bonus défensif correctement prévu     | 1 pt   |
+| Pronostic                                                          | Points |
+| ------------------------------------------------------------------ | ------ |
+| Issue correcte (domicile / extérieur)                              | 3 pts  |
+| Issue correcte (nul)                                               | 4 pts  |
+| Bonus offensif : attribution correctement prévue (attribué ou non) | 1 pt   |
+| Bonus défensif : attribution correctement prévue (attribué ou non) | 1 pt   |
 
-- Maximum par match : **6 pts** (nul + 2 bonus)
+- Chaque bonus est noté indépendamment et de façon symétrique : prédire correctement qu'un bonus **ne sera pas** attribué rapporte autant qu'un bonus correctement prévu attribué. Sans cette symétrie, prédire systématiquement un bonus ne coûterait jamais rien.
+- Maximum par match : **6 pts** (nul + 2 bonus correctement prévus, attribués ou non)
+- Minimum pour une issue correcte : **3 pts** (les deux bonus mal prévus)
 - Un pronostic non saisi vaut **0 pt** pour ce match
 - Les bonus ne rapportent des points que si l'issue est également correcte
 
@@ -316,12 +318,12 @@ En développement, les données de démonstration (compétition, 26 journées, j
 
 #### Accès réels en V1
 
-| Besoin                                           | Accès DynamoDB                                              |
-| ------------------------------------------------ | ------------------------------------------------------------ |
-| Lire une compétition                             | `GetItem` sur `PK = COMP#{id}`, `SK = META`                  |
-| Lire une journée et ses matchs (imbriqués)       | `GetItem` sur `PK = MATCHDAY#{id}`, `SK = META`               |
+| Besoin                                             | Accès DynamoDB                                                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Lire une compétition                               | `GetItem` sur `PK = COMP#{id}`, `SK = META`                                                                              |
+| Lire une journée et ses matchs (imbriqués)         | `GetItem` sur `PK = MATCHDAY#{id}`, `SK = META`                                                                          |
 | Lire les pronostics d'un joueur (+ filtre journée) | `Query` sur `PK = PLAYER#{playerId}`, `begins_with(SK, 'PRED#')`, filtrage applicatif sur les ids de match de la journée |
-| Lire un classement global ou par journée         | Calcul à la demande à partir des pronostics et des journées concernées, pas de lecture dédiée |
+| Lire un classement global ou par journée           | Calcul à la demande à partir des pronostics et des journées concernées, pas de lecture dédiée                            |
 
 ### Infrastructure
 

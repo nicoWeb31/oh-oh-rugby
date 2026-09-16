@@ -14,10 +14,11 @@ import { PredictionService } from '../../services/prediction.service';
 import { PlayerService } from '../../services/player.service';
 import { ScoringService } from '../../services/scoring.service';
 import { FormatDatePipe } from '../../pipes/format-date.pipe';
+import { TeamLogoPipe } from '../../pipes/team-logo.pipe';
 
 @Component({
   selector: 'oh-rugby-matchday',
-  imports: [RouterLink, FormsModule, FormatDatePipe],
+  imports: [RouterLink, FormsModule, FormatDatePipe, TeamLogoPipe],
   template: `
     @if (matchday()) {
       <div class="matchday-page">
@@ -41,12 +42,22 @@ import { FormatDatePipe } from '../../pipes/format-date.pipe';
                   [class.winner]="match.result?.outcome === 'HOME'"
                 >
                   {{ match.homeTeam }}
+                  <img
+                    class="team-logo"
+                    [src]="match.homeTeam | teamLogo"
+                    [alt]="match.homeTeam"
+                  />
                 </span>
                 <span class="vs">VS</span>
                 <span
                   class="team away"
                   [class.winner]="match.result?.outcome === 'AWAY'"
                 >
+                  <img
+                    class="team-logo"
+                    [src]="match.awayTeam | teamLogo"
+                    [alt]="match.awayTeam"
+                  />
                   {{ match.awayTeam }}
                 </span>
               </div>
@@ -235,19 +246,29 @@ import { FormatDatePipe } from '../../pipes/format-date.pipe';
         gap: 0.5rem;
       }
       .team {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
         font-size: 0.85rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 1px;
       }
       .team.home {
+        justify-content: flex-end;
         text-align: right;
       }
       .team.away {
+        justify-content: flex-start;
         text-align: left;
       }
       .team.winner {
         color: var(--gold);
+      }
+      .team-logo {
+        width: 22px;
+        height: 22px;
+        flex-shrink: 0;
       }
       .vs {
         font-size: 0.6rem;

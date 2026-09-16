@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { Match, MatchdayStatus, MatchOutcome } from '@org/models';
 import { MatchdayService } from '../../services/matchday.service';
 import { FormatDatePipe } from '../../pipes/format-date.pipe';
+import { TeamLogoPipe } from '../../pipes/team-logo.pipe';
 
 interface Draft {
   outcome: MatchOutcome | null;
@@ -12,7 +13,7 @@ interface Draft {
 
 @Component({
   selector: 'oh-rugby-admin',
-  imports: [RouterLink, FormatDatePipe],
+  imports: [RouterLink, FormatDatePipe, TeamLogoPipe],
   template: `
     <div class="admin-page">
       <div class="page-header">
@@ -34,9 +35,23 @@ interface Draft {
           @for (match of matchday.matches; track match.id) {
             <div class="match-row">
               <div class="teams">
-                <span>{{ match.homeTeam }}</span>
+                <span class="team home">
+                  {{ match.homeTeam }}
+                  <img
+                    class="team-logo"
+                    [src]="match.homeTeam | teamLogo"
+                    [alt]="match.homeTeam"
+                  />
+                </span>
                 <span class="vs">VS</span>
-                <span>{{ match.awayTeam }}</span>
+                <span class="team away">
+                  <img
+                    class="team-logo"
+                    [src]="match.awayTeam | teamLogo"
+                    [alt]="match.awayTeam"
+                  />
+                  {{ match.awayTeam }}
+                </span>
               </div>
 
               <div class="outcome-btns">
@@ -171,11 +186,23 @@ interface Draft {
         text-transform: uppercase;
         letter-spacing: 1px;
       }
-      .teams span:first-child {
+      .team {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .team.home {
+        justify-content: flex-end;
         text-align: right;
       }
-      .teams span:last-child {
+      .team.away {
+        justify-content: flex-start;
         text-align: left;
+      }
+      .team-logo {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
       }
       .vs {
         font-size: 0.6rem;

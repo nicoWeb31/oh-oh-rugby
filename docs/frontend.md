@@ -111,6 +111,28 @@ Chaque composant réutilise ces variables dans ses styles (`styles: [...]` en li
 
 Le header (`app.ts`) est responsive avec un point de rupture unique à 640px (`cff458f` — corrige un débordement du nom du joueur sur petit écran en faisant passer les liens de nav sur une seconde ligne).
 
+### Blasons d'équipe
+
+Chaque nom d'équipe (`match.homeTeam` / `match.awayTeam`, une simple `string` — voir `Match` dans `packages/shared/models`) est maintenant accompagné d'un petit blason SVG, sur `/matchday/:id` et `/admin`, pour rendre les cartes de match plus lisibles d'un coup d'œil qu'une liste de noms de club.
+
+Le modèle de données n'a **pas** été modifié pour ça : il n'y a pas de champ `logoUrl` sur `Match`, pas de nouvelle entité `Team` côté backend. Le mapping nom → visuel vit entièrement côté frontend :
+
+- `apps/oh-rugby/src/app/data/team-visuals.ts` — un dictionnaire `nom d'équipe → slug` (les 14 clubs du TOP 14, calé sur les libellés exacts utilisés dans `apps/back-oh-rugby/src/data/matchdays.seed.ts`) et une fonction `teamLogoUrl()` qui renvoie `/logos/{slug}.svg`, ou `/logos/default.svg` si le nom ne correspond à aucune clé connue (pas d'erreur ni de `<img>` cassée pour une équipe future non répertoriée).
+- `apps/oh-rugby/src/app/pipes/team-logo.pipe.ts` — pipe standalone `teamLogo`, même pattern que `FormatDatePipe` : `{{ match.homeTeam | teamLogo }}` dans un template plutôt qu'un appel de méthode sur le composant.
+- `apps/oh-rugby/public/logos/*.svg` — 14 blasons + `default.svg`, servis tels quels (le dossier `public/` est copié à la racine du build par `fileReplacements`/`assets` dans `project.json`, `glob: "**/*"`).
+
+**Pourquoi des blasons générés plutôt que les vrais logos des clubs** : les crests officiels du TOP 14 sont des marques déposées (vérifié explicitement dans les CGU de la LNR, `lnr.fr/page/cgu` : toute utilisation des marques/logos des clubs membres est soumise à autorisation préalable et expresse), pas question de les héberger dans ce repo — encore moins de les servir publiquement une fois déployé sur CloudFront. Chaque blason est donc une forme d'écusson générique (même tracé SVG pour les 14), rempli d'une couleur inspirée du maillot du club (ex. jaune et noir pour La Rochelle, rouge et noir pour Toulouse) et des initiales (2 à 4 lettres, ex. `UBB`, `ASM`, `RCT`) — suffisant pour identifier une équipe au coup d'œil dans une liste, sans reproduire une marque. Pour la même raison, le design reste volontairement **générique** : pas de reprise de la forme ou des motifs distinctifs d'un vrai blason (ex. les éclairs du Stade Français), même redessinés à la main — une ressemblance forte pose le même risque qu'une copie du fichier.
+
+**Génération** : les 15 SVG ne sont pas dessinés à la main mais produits par `apps/oh-rugby/scripts/generate-team-logos.mjs` (script Node autonome, non branché sur le build). Il contient le tableau `TEAMS` (`slug`, `short`, `color`, `text`) et un unique tracé de blason (`SHIELD_PATH`) réutilisé pour tous. Pour changer une couleur, ajouter une équipe (promotion/relégation Top 14 ↔ Pro D2) ou régénérer les fichiers après une modification du tracé :
+
+```bash
+node apps/oh-rugby/scripts/generate-team-logos.mjs
+```
+
+Le script écrase les SVG existants dans `apps/oh-rugby/public/logos/` — il n'y a rien à committer manuellement à part le résultat.
+
+**Intégration dans les templates** : `MatchdayComponent` et `AdminComponent` affichent chacun un `<img class="team-logo" [src]="match.homeTeam | teamLogo" [alt]="match.homeTeam">` à côté du nom, dans le même `<span class="team">` qui portait déjà le nom seul. Le `<span>` est passé en `display: flex` pour aligner logo et texte (logo après le texte côté domicile pour rester collé au centre du match-up, avant le texte côté extérieur) — un détail purement visuel, aucune logique nouvelle.
+
 ## Tests
 
 Jusqu'au commit `2432d97`, `apps/oh-rugby` n'avait **aucun** fichier `*.spec.ts`, ce qui faisait échouer `nx test` (exécuté par le pipeline de déploiement) avec "No test files found". Deux correctifs :

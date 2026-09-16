@@ -12,11 +12,36 @@ Installer les dépendances une seule fois :
 npm install
 ```
 
-Démarrer l'API Express dans un premier terminal :
+En local, le backend lit et écrit dans DynamoDB (voir `infra/terraform/README.md` pour le déploiement en vrai) — il faut donc une base à côté de lui. Deux options :
+
+### Option A — DynamoDB Local (recommandé, tout tourne en local)
+
+Nécessite Java 17+ et le cask Homebrew `dynamodb-local` (`brew install --cask dynamodb-local`, une seule fois). Détail complet, y compris le pourquoi de chaque variable d'environnement, dans `docs/backend.md` ("DynamoDB Local").
+
+**Terminal 1** — DynamoDB Local, à garder ouvert :
 
 ```bash
-npm exec -- nx run back-oh-rugby:serve
+npm run dynamodb:local
 ```
+
+**Une seule fois** (recrée la table vide — échoue si elle existe déjà, ce qui est le signal qu'elle y est déjà) :
+
+```bash
+npm run dynamodb:local:create-table
+npm run seed:dynamodb:local
+```
+
+**Terminal 2** — l'API, branchée sur cette base locale :
+
+```bash
+npm run serve:back:local
+```
+
+### Option B — pointer sur l'environnement `dev` déployé
+
+Pas de backend local à lancer : dans `apps/oh-rugby/src/environments/environment.ts`, remplacer temporairement `apiUrl` par l'URL de l'API `dev` (`aws apigatewayv2 get-apis --region eu-west-3` pour la retrouver). Pratique pour tester vite le frontend contre de vraies données, mais ne pas committer ce changement — c'est la valeur par défaut de toute l'équipe.
+
+### Dans tous les cas
 
 L'API répond sur `http://localhost:3333/api` ; vérifier son état avec :
 
@@ -24,15 +49,13 @@ L'API répond sur `http://localhost:3333/api` ; vérifier son état avec :
 curl http://localhost:3333/api/health
 ```
 
-Démarrer le frontend Angular dans un second terminal :
+Démarrer le frontend Angular dans un dernier terminal :
 
 ```bash
 npm exec -- nx run oh-rugby:serve
 ```
 
-Arrêter l'un ou l'autre serveur avec `Ctrl+C` dans le terminal correspondant.
-
-En local, le backend lit et écrit dans DynamoDB (voir `infra/terraform/README.md` pour le déploiement) ; sans configuration AWS locale, pointez `DYNAMODB_ENDPOINT` vers une instance DynamoDB Local ou déployez l'environnement `dev` pour tester contre de vraies données.
+Arrêter n'importe lequel de ces process avec `Ctrl+C` dans son terminal.
 
 ## Déploiement AWS
 

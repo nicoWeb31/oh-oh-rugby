@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 72" role="img" aria-label="BAY">
+  <path d="M32 2 L58 11 V33 C58 51 46 63 32 70 C18 63 6 51 6 33 V11 Z" fill="#5fb3e0" stroke="#e8c84a" stroke-width="1.5"/>
+  <text x="32" y="40" text-anchor="middle" dominant-baseline="middle"
+    font-family="'Barlow Condensed', Arial, sans-serif" font-weight="900"
+    font-size="20" letter-spacing="0.5" fill="#0e1a2b">BAY</text>
+</svg>

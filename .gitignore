@@ -68,3 +68,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 infra/terraform/modules/lambda/placeholder.zip
+
+# DynamoDB Local data files (local dev only, see docs/backend.md)
+.dynamodb-local-data/
+dynamodb-local-metadata.json

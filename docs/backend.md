@@ -118,8 +118,41 @@ Cette route enregistre le résultat réel d'un match (issue + bonus obtenus), co
 
 Les données de démonstration (`src/data/matchdays.seed.ts`, `players.seed.ts`, `predictions.seed.ts`) contiennent la compétition TOP 14, ses 26 journées de 7 matchs (calendrier réel 2026-2027, reset par le commit `de2bf41`), des joueurs et des pronostics d'exemple. Elles sont utilisées de deux façons distinctes :
 
-- **En développement local sans DynamoDB configuré** : rien ne les charge automatiquement dans une base — elles servent de source pour le seed. Pour tester l'API localement, il faut soit pointer `DYNAMODB_ENDPOINT` vers une instance DynamoDB Local et lancer le seed dessus, soit cibler l'environnement `dev` réel.
+- **En développement local sans DynamoDB configuré** : rien ne les charge automatiquement dans une base — elles servent de source pour le seed. Pour tester l'API localement, il faut soit pointer `DYNAMODB_ENDPOINT` vers une instance DynamoDB Local et lancer le seed dessus (voir ci-dessous), soit cibler l'environnement `dev` réel.
 - **Seed d'un environnement réel** (`src/scripts/seed.ts`, exécuté via `npm run seed:dynamodb` ou le workflow GitHub Actions `seed-dynamodb.yml`) : écrit tous les items en base par lots de 25 (`BatchWriteItem`).
+
+### DynamoDB Local — faire tourner l'API en local avec de vraies données locales
+
+Par défaut (`npm exec -- nx run back-oh-rugby:serve` sans variables d'environnement), `src/dynamodb/client.ts` construit un `DynamoDBClient` sans `endpoint` explicite : le SDK AWS résout alors l'endpoint régional réel (`dynamodb.eu-west-3.amazonaws.com`) au lieu de rester en local. Sans credentials/table qui correspondent, chaque requête échoue et l'app renvoie une erreur 500 générique (le middleware d'erreur de `app.ts` ne détaille jamais la cause au client) — c'est ce qui se passe si on lance juste `nx run back-oh-rugby:serve` sans rien configurer.
+
+Pour un vrai backend local (au lieu de pointer le front sur l'environnement `dev` déployé), trois étapes, chacune dans son propre terminal ou en tâche de fond :
+
+1. **Lancer DynamoDB Local** (jar officiel AWS, tourne en Java — installé via `brew install --cask dynamodb-local`, nécessite Java 17+) :
+
+   ```bash
+   npm run dynamodb:local
+   ```
+
+   Démarre une instance sur `:8000`, avec les données persistées dans `.dynamodb-local-data/` (gitignoré) grâce à `-sharedDb` — contrairement à un mode purement en mémoire, les données survivent à un redémarrage du process.
+
+2. **Créer la table** (une seule fois — la commande échoue si la table existe déjà, ce qui est le signal que cette étape est déjà faite) :
+
+   ```bash
+   npm run dynamodb:local:create-table
+   ```
+
+   Mêmes clés que la table réelle (`PK`/`SK`, toutes deux de type `S`, voir `infra/terraform/modules/dynamodb/main.tf`) — la table locale n'est pas juste "une base DynamoDB quelconque", elle respecte le schéma que `app.ts`/les repositories attendent.
+
+3. **Seeder les données de démo, puis lancer l'API** :
+
+   ```bash
+   npm run seed:dynamodb:local
+   npm run serve:back:local
+   ```
+
+**Pédagogie** : le SDK AWS v3 exige _toujours_ une région et des credentials, même contre un endpoint local qui ne les vérifie pas réellement — d'où les `AWS_ACCESS_KEY_ID=local` / `AWS_SECRET_ACCESS_KEY=local` / `AWS_REGION=eu-west-3` factices dans ces scripts (`package.json`) : sans eux, le SDK échoue à résoudre une config de credentials _avant même_ d'essayer de contacter `localhost:8000`, ce qui est une erreur différente (et plus déroutante) que celle produite par un vrai problème réseau. `DYNAMODB_TABLE` vaut déjà `oh-rugby-local` par défaut dans `client.ts` — seul `DYNAMODB_ENDPOINT` est réellement indispensable pour basculer le client en mode local.
+
+Aucun de ces trois process (DynamoDB Local, l'API, le seed) n'est démarré automatiquement par `nx run back-oh-rugby:serve` : c'est un choix cohérent avec le reste du repo (voir README, "Démarrage local") où chaque service se lance dans son propre terminal, plutôt qu'un unique script qui orchestrerait tout et masquerait ce qui tourne réellement.
 
 **Le seed n'est pas idempotent au sens strict, mais il est sans risque à rejouer sur une table vide** : chaque `PutItem` remplace intégralement l'item existant à la même clé (comportement standard de `PutCommand`, pas un _merge_). Concrètement, cela veut dire que relancer le seed sur un environnement où de vrais joueurs ont déjà saisi des pronostics **écrase ces pronostics** avec les données de démo. `prod` contenant désormais de vraies données, deux garde-fous empêchent maintenant ce scénario plutôt que de se contenter de l'avertissement en commentaire : le workflow `seed-dynamodb.yml` ne propose plus `prod` comme cible, et la table `prod` a `prevent_destroy = true` côté Terraform. Détail complet dans `infra/terraform/README.md`.
 

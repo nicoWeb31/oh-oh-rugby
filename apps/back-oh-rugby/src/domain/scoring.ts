@@ -15,12 +15,12 @@ export function getMatchdayStatus(matchday: Matchday): MatchdayStatus {
   monday.setDate(matchDate.getDate() - ((matchDate.getDay() + 6) % 7));
   monday.setHours(0, 0, 0, 0);
 
-  const saturdayNoon = new Date(monday);
-  saturdayNoon.setDate(monday.getDate() + 5);
-  saturdayNoon.setHours(12, 0, 0, 0);
+  const saturdayDeadline = new Date(monday);
+  saturdayDeadline.setDate(monday.getDate() + 5);
+  saturdayDeadline.setHours(14, 0, 0, 0);
 
   if (now < monday) return MatchdayStatus.UPCOMING;
-  return now < saturdayNoon ? MatchdayStatus.ACTIVE : MatchdayStatus.LOCKED;
+  return now < saturdayDeadline ? MatchdayStatus.ACTIVE : MatchdayStatus.LOCKED;
 }
 
 export function findMatch(

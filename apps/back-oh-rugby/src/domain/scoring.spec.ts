@@ -143,7 +143,7 @@ describe('getMatchdayStatus', () => {
     );
   });
 
-  it('is LOCKED after Saturday noon of match week', () => {
+  it('is LOCKED after the Saturday 14:00 deadline of match week', () => {
     expect(getMatchdayStatus({ ...matchday, date: '2000-01-02' })).toBe(
       MatchdayStatus.LOCKED,
     );

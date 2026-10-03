@@ -21,7 +21,7 @@ import { FormatDatePipe } from '../../pipes/format-date.pipe';
           <div class="active-badge">ACTIVE</div>
           <div class="active-label">{{ activeMatchday()!.label }}</div>
           <p class="active-hint">
-            Les pronostics sont ouverts jusqu'au samedi midi
+            Les pronostics sont ouverts jusqu'au samedi 14h
           </p>
           <a
             [routerLink]="['/matchday', activeMatchday()!.id]"

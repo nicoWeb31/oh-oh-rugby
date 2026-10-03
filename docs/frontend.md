@@ -74,10 +74,10 @@ Le remplacement de fichier au build est déclaré dans `project.json` via `fileR
 `MatchdayService.getStatus()` recalcule le statut **côté client**, purement à partir de la date de la journée et de l'horloge du navigateur :
 
 - `UPCOMING` avant le lundi de la semaine des matchs ;
-- `ACTIVE` du lundi au samedi midi ;
-- `LOCKED` après samedi midi (commit `dc6b248` — la fenêtre était initialement calée sur vendredi 23:59, changée pour coller à l'horaire réel des matchs qui démarrent le samedi).
+- `ACTIVE` du lundi au samedi 14h ;
+- `LOCKED` après samedi 14h (commit `dc6b248` — la fenêtre était initialement calée sur vendredi 23:59, puis sur samedi midi, pour coller à l'horaire réel des matchs qui démarrent le samedi).
 
-**Important** : ce calcul frontend est **indicatif seulement**, il sert à afficher l'état et à verrouiller l'UI (masquer les boutons de saisie). La règle qui compte réellement est réappliquée côté backend à chaque écriture de pronostic (`docs/backend.md`) — sans ça, un utilisateur pourrait contourner le verrouillage en modifiant le JS chargé dans son navigateur. Le commit `5a12302` a d'ailleurs révélé un bug où le backend gardait encore l'ancien horaire (vendredi 23:59) après que le front soit passé à samedi midi : les pronostics étaient silencieusement rejetés côté serveur entre vendredi soir et samedi midi. Ça illustre bien pourquoi une règle métier dupliquée entre deux couches doit être changée aux deux endroits à la fois.
+**Important** : ce calcul frontend est **indicatif seulement**, il sert à afficher l'état et à verrouiller l'UI (masquer les boutons de saisie). La règle qui compte réellement est réappliquée côté backend à chaque écriture de pronostic (`docs/backend.md`) — sans ça, un utilisateur pourrait contourner le verrouillage en modifiant le JS chargé dans son navigateur. Le commit `5a12302` a d'ailleurs révélé un bug où le backend gardait encore l'ancien horaire (vendredi 23:59) après que le front soit passé à la deadline du samedi : les pronostics étaient silencieusement rejetés côté serveur entre vendredi soir et samedi midi. Ça illustre bien pourquoi une règle métier dupliquée entre deux couches doit être changée aux deux endroits à la fois.
 
 ### Score d'un pronostic
 

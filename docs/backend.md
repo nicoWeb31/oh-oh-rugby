@@ -81,7 +81,7 @@ C'est la seule couche qui contient des règles métier ; elle ne connaît ni Exp
 
 ### Statut d'une journée (`getMatchdayStatus`)
 
-Calcule si une journée est `UPCOMING`, `ACTIVE` ou `LOCKED` à partir de sa date de match et de l'heure courante : active du lundi 00:00 de la semaine du match jusqu'au samedi 12:00 (commit `dc6b248`, qui a déplacé la deadline de saisie au samedi midi). C'est une fonction pure — pas d'accès disque ni réseau — ce qui permet de tester des dates arbitraires (`scoring.spec.ts` teste `2099-01-04` pour UPCOMING et `2000-01-02` pour LOCKED) sans avoir à mocker `Date.now()`.
+Calcule si une journée est `UPCOMING`, `ACTIVE` ou `LOCKED` à partir de sa date de match et de l'heure courante : active du lundi 00:00 de la semaine du match jusqu'au samedi 14:00 (commit `dc6b248`, qui a déplacé la deadline de saisie au samedi après-midi). C'est une fonction pure — pas d'accès disque ni réseau — ce qui permet de tester des dates arbitraires (`scoring.spec.ts` teste `2099-01-04` pour UPCOMING et `2000-01-02` pour LOCKED) sans avoir à mocker `Date.now()`.
 
 ### Barème de points (`scorePrediction`)
 
